@@ -42,9 +42,16 @@ A proposta do BrideHub nasceu da experiência pessoal da própria autora, que ao
 
 ### Comunidade de Noivas
 
-A autora faz parte de uma comunidade ativa de noivas, já formada e engajada, que foi utilizada como fonte primária de validação da demanda. As dores relatadas pelas participantes dessa comunidade confirmam o problema descrito: dependência de planilhas, falta de organização centralizada e ausência de ferramentas gratuitas adequadas.
+A autora faz parte de uma comunidade ativa de noivas, já formada e engajada, que foi utilizada como fonte primária de validação da demanda. As dores relatadas pelas participantes dessa comunidade confirmam o problema descrito: dependência de planilhas, falta de organização centralizada e ausência de ferramentas gratuitas adequadas. Os feedbacks foram colhidos através de um formulário (Google Forms) encaminhado para noivas e recém casadas.
 
-_print do resultado do forms_
+![Gráfico de resultado do Forms 1](../assets/grafico1.png)
+![Gráfico de resultado do Forms 1](../assets/grafico2.png)
+![Gráfico de resultado do Forms 1](../assets/grafico3.png)
+![Gráfico de resultado do Forms 1](../assets/grafico4.png)
+![Quadro de relatos do Forms 1](../assets/relato3.png)
+![Quadro de relatos do Forms 1](../assets/relato4.png)
+![Quadro de relatos do Forms 1](../assets/relato5.png)
+![Quadro de relatos do Forms 1](../assets/relato6.png)
 
 Além disso, há também evidências em todo lugar. Utilizando o Reddit, observamos que os relatos identificados datam de até 5 anos atrás, evidenciando que o problema não é novo e que, mesmo com o tempo, nenhuma solução gratuita e centralizada surgiu para resolvê-lo de forma satisfatória.
 
