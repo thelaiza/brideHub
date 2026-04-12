@@ -47,9 +47,10 @@ A autora faz parte de uma comunidade ativa de noivas, já formada e engajada, qu
 _print do resultado do forms_
 
 Além disso, há também evidências em todo lugar. Utilizando o Reddit, observamos que os relatos identificados datam de até 5 anos atrás, evidenciando que o problema não é novo e que, mesmo com o tempo, nenhuma solução gratuita e centralizada surgiu para resolvê-lo de forma satisfatória.
-![alt text](image.png)
-![alt text](image-1.png)
-![alt text](image-2.png)
+
+![Relato de casamento desorganizado no Reddit](../assets/relato1.png)
+![Relato de noiva estressada e desorganizada no Reddit](../assets/relato2.png)
+![Gráfico de enquete sobre saúde mental no planejamento do casamento](../assets/graficoReddit.png)
 
 
 ---
