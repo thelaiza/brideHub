@@ -14,7 +14,7 @@ O projeto é validado por uma comunidade real de noivas, garantindo impacto exte
 |-------------|-----------|
 | `bridehub-docs` | Documentação (este repositório) |
 | `bridehub-frontend` | Frontend — Vue 3 + Vite |
-| `bridehub-backend` | Backend — C# ASP.NET Core |
+| `bridehub-backend` | Backend — Node.js |
 
 ## Stack
 
