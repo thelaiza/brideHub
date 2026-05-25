@@ -19,8 +19,8 @@ O projeto é validado por uma comunidade real de noivas, garantindo impacto exte
 ## Stack
 
 - **Frontend:** Vue 3 + Vite + Tailwind CSS
-- **Backend:** C# ASP.NET Core Web API
-- **Banco de Dados:** SQLServer
+- **Backend:** Node.js
+- **Banco de Dados:** PostgreSQL
 - **Infraestrutura:** Docker, GitHub Actions, SonarCloud, New Relic
 
 ## Licença
