@@ -1,28 +1,25 @@
-# BrideHub — Documentação
+# BrideHub — Plataforma de Organização de Casamentos
 
-Repositório de documentação do projeto **BrideHub**, desenvolvido como TCC do curso de Engenharia de Software da Católica SC.
+Repositório unificado do projeto **BrideHub**, desenvolvido como TCC do curso de Engenharia de Software da Católica SC[cite: 3].
 
 ## Sobre o Projeto
 
-O BrideHub é uma aplicação web **gratuita** para organização de casamentos. A ideia é centralizar em um único lugar tudo que a noiva precisa durante o planejamento — fornecedores, orçamento, tarefas, documentos e contratos — sem depender de planilhas ou cerimonialistas.
+O BrideHub é uma aplicação web **gratuita** para organização de casamentos[cite: 3]. A ideia é centralizar em um único lugar tudo que a noiva precisa durante o planejamento — fornecedores, orçamento, tarefas e contratos — sem depender de planilhas complexas ou cerimonialistas[cite: 3].
 
-O projeto é validado por uma comunidade real de noivas, garantindo impacto extensionista genuíno.
+## Arquitetura e Stack
 
-## Repositórios
+O projeto adota uma arquitetura limpa e containerizada (Monorepo), estruturada com:
 
-| Repositório | Descrição |
-|-------------|-----------|
-| `bridehub-docs` | Documentação (este repositório) |
-| `bridehub-frontend` | Frontend — Vue 3 + Vite |
-| `bridehub-backend` | Backend — Node.js |
+- **Frontend:** React + Vite + TypeScript + Tailwind CSS[cite: 3]
+- **Backend:** Node.js + Express + Prisma ORM[cite: 3]
+- **Banco de Dados:** PostgreSQL (rodando isolado via Docker)[cite: 3]
+- **Infraestrutura & Observabilidade:** Docker Compose, Prometheus, Grafana e GitHub Actions[cite: 3]
 
-## Stack
+## Estrutura do Repositório
 
-- **Frontend:** Vue 3 + Vite + Tailwind CSS
-- **Backend:** Node.js
-- **Banco de Dados:** PostgreSQL
-- **Infraestrutura:** Docker, GitHub Actions, SonarCloud, New Relic
-
-## Licença
-
-MIT
+```text
+bridehub/
+├── frontend/             # Aplicação web em React + Vite
+├── backend/              # API REST em Node.js
+├── observability/        # Configurações de monitoramento (Prometheus/Grafana)
+└── docker-compose.yml    # Orquestração de containers (Banco, API, Web e Monitoramento)
