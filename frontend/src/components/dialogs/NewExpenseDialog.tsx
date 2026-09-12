@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { X, DollarSign, Calendar, Tag, FileText } from 'lucide-react';
+import type { Expense } from '../../types';
 
 interface NewExpenseDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (expense: any) => void;
+  onSave: (expense: Omit<Expense, 'id'>) => void;
 }
 
 export const NewExpenseDialog: React.FC<NewExpenseDialogProps> = ({ isOpen, onClose, onSave }) => {
@@ -19,7 +20,6 @@ export const NewExpenseDialog: React.FC<NewExpenseDialogProps> = ({ isOpen, onCl
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave({
-      id: Math.random().toString(36).substring(2, 9),
       title,
       category,
       amount: parseFloat(amount) || 0,

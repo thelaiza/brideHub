@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { X, CheckSquare, Calendar, Tag, AlertCircle } from 'lucide-react';
+import type { Task } from '../../types';
 
 interface NewTaskDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (task: any) => void;
+  onSave: (task: Omit<Task, 'id'>) => void;
 }
 
 export const NewTaskDialog: React.FC<NewTaskDialogProps> = ({ isOpen, onClose, onSave }) => {
@@ -18,10 +19,8 @@ export const NewTaskDialog: React.FC<NewTaskDialogProps> = ({ isOpen, onClose, o
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave({
-      id: Math.random().toString(36).substring(2, 9),
       title,
       category,
-      priority,
       dueDate,
       status: 'todo'
     });

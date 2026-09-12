@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
-import { X, Users, Phone, Mail, MapPin, DollarSign } from 'lucide-react';
+import { X, Users, Phone, MapPin, DollarSign } from 'lucide-react';
+import type { Vendor } from '../../types';
 
 interface NewVendorDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (vendor: any) => void;
+  onSave: (vendor: Omit<Vendor, 'id'>) => void;
 }
 
 export const NewVendorDialog: React.FC<NewVendorDialogProps> = ({ isOpen, onClose, onSave }) => {
   const [name, setName] = useState('');
   const [category, setCategory] = useState('Espaço & Buffet');
   const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
   const [cost, setCost] = useState('');
   const [status, setStatus] = useState<'Contratado' | 'Orçamento' | 'Pesquisando'>('Orçamento');
 
@@ -20,11 +20,9 @@ export const NewVendorDialog: React.FC<NewVendorDialogProps> = ({ isOpen, onClos
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave({
-      id: Math.random().toString(36).substring(2, 9),
       name,
       category,
       phone,
-      email,
       cost: parseFloat(cost) || 0,
       status
     });
