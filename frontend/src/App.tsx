@@ -26,7 +26,11 @@ export function App() {
   }
 
   return (
-    <AppShell currentTab={currentTab} onTabChange={setCurrentTab}>
+    <AppShell 
+      currentTab={currentTab} 
+      onTabChange={setCurrentTab}
+      onLogout={() => setIsAuthenticated(false)}
+    >
       {currentTab === 'dashboard' && <DashboardPage onNavigate={setCurrentTab} />}
       {currentTab === 'financeiro' && <FinanceiroPage />}
       {currentTab === 'fornecedores' && <FornecedoresPage />}
