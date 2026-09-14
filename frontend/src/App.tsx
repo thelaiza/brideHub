@@ -4,8 +4,10 @@ import { DashboardPage } from './pages/DashboardPage';
 import { FinanceiroPage } from './pages/FinanceiroPage';
 import { FornecedoresPage } from './pages/FornecedoresPage';
 import { TarefasPage } from './pages/TarefasPage';
+import { LoginPage } from './pages/LoginPage';
 
 export function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentTab, setCurrentTab] = useState('dashboard');
 
   useEffect(() => {
@@ -17,6 +19,11 @@ export function App() {
     };
     document.title = titles[currentTab] || 'BrideHub — Organização de Casamento';
   }, [currentTab]);
+
+  // Se não estiver logado, exibe a tela de login
+  if (!isAuthenticated) {
+    return <LoginPage onLogin={() => setIsAuthenticated(true)} />;
+  }
 
   return (
     <AppShell currentTab={currentTab} onTabChange={setCurrentTab}>
