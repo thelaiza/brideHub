@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Users, Phone, MapPin, DollarSign } from 'lucide-react';
+import { X, Users, Phone, DollarSign } from 'lucide-react';
 import type { Vendor } from '../../types';
 
 interface NewVendorDialogProps {
