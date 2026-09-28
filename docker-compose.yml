@@ -1,11 +1,14 @@
 services:
   db:
     image: postgres:16-alpine
+    container_name: bridehub_db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-bridehub}
+      POSTGRES_USER: ${POSTGRES_USER:-bridehub_admin}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
-      POSTGRES_DB: ${POSTGRES_DB:-bridehub}
+      POSTGRES_DB: ${POSTGRES_DB:-bridehub_db}
+    ports:
+      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -21,7 +24,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-bridehub}:${POSTGRES_PASSWORD:-bridehub_pass}@db:5432/${POSTGRES_DB:-bridehub}?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-bridehub_admin}:${POSTGRES_PASSWORD:-bridehub_pass}@db:5432/${POSTGRES_DB:-bridehub}?schema=public
       API_PORT: 3333
       JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET no .env}
     volumes:
