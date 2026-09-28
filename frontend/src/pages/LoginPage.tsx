@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Heart, User, Mail, Lock } from 'lucide-react';
+import { useGoogleLogin } from '@react-oauth/google';
 import { api } from '../services/api';
 
 interface LoginPageProps {
@@ -55,9 +56,32 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     }
   };
 
-  const handleGoogleLogin = () => {
-    alert('Integração com o Google será ativada em breve!');
-  };
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        setLoading(true);
+        setErrorMessage('');
+
+        const response = await api.post('/api/auth/google', {
+          token: tokenResponse.access_token,
+        });
+
+        const { token } = response.data;
+        localStorage.setItem('@BrideHub:token', token);
+        onLogin();
+      } catch (error: any) {
+        console.error('Erro no login com Google:', error);
+        setErrorMessage(
+          error.response?.data?.error || 'Erro ao autenticar com o Google. Tente novamente.'
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    onError: () => {
+      setErrorMessage('Falha na autenticação com o Google.');
+    },
+  });
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{
@@ -88,8 +112,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
         <button
           type="button"
-          onClick={handleGoogleLogin}
-          className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-border rounded-2xl text-sm font-semibold text-foreground bg-card hover:bg-muted/50 transition-all shadow-sm cursor-pointer"
+          onClick={() => googleLogin()}
+          disabled={loading}
+          className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-border rounded-2xl text-sm font-semibold text-foreground bg-card hover:bg-muted/50 transition-all shadow-sm cursor-pointer disabled:opacity-50"
         >
           <svg className="size-5" viewBox="0 0 24 24">
             <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.8 7.3l3.7 2.9C6.4 7.2 9 5 12 5z"/>
