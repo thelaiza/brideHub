@@ -31,5 +31,5 @@ app.get('/api/status', async (req, res) => {
 const PORT = process.env.API_PORT || 3333;
 
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor rodando na porta ${PORT}`);
+  console.log(`Servidor rodando na porta ${PORT}`);
 });

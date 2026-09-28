@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Heart, User, Mail, Lock } from 'lucide-react';
+import { api } from '../services/api';
 
 interface LoginPageProps {
   onLogin: () => void;
@@ -10,10 +11,52 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onLogin();
+    setLoading(true);
+    setErrorMessage('');
+
+    try {
+      if (isRegistering) {
+        await api.post('/api/auth/register', {
+          name,
+          email,
+          password,
+        });
+        
+        const response = await api.post('/api/auth/login', {
+          email,
+          password,
+        });
+
+        const { token } = response.data;
+        localStorage.setItem('@BrideHub:token', token);
+        onLogin();
+      } else {
+        const response = await api.post('/api/auth/login', {
+          email,
+          password,
+        });
+
+        const { token } = response.data;
+        localStorage.setItem('@BrideHub:token', token);
+        onLogin();
+      }
+    } catch (error: any) {
+      console.error('Erro na autenticação:', error);
+      setErrorMessage(
+        error.response?.data?.error || 'Ocorreu um erro ao processar a requisição. Tente novamente.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = () => {
+    alert('Integração com o Google será ativada em breve!');
   };
 
   return (
@@ -37,9 +80,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           </div>
         </div>
 
+        {errorMessage && (
+          <div className="p-3 text-xs text-red-500 bg-red-500/10 border border-red-500/20 rounded-xl text-center">
+            {errorMessage}
+          </div>
+        )}
+
         <button
           type="button"
-          onClick={onLogin}
+          onClick={handleGoogleLogin}
           className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-border rounded-2xl text-sm font-semibold text-foreground bg-card hover:bg-muted/50 transition-all shadow-sm cursor-pointer"
         >
           <svg className="size-5" viewBox="0 0 24 24">
@@ -116,9 +165,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
           <button 
             type="submit"
-            className="w-full py-3.5 px-4 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-2xl shadow-lg shadow-primary/20 transition-all cursor-pointer mt-2"
+            disabled={loading}
+            className="w-full py-3.5 px-4 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-2xl shadow-lg shadow-primary/20 transition-all cursor-pointer mt-2 disabled:opacity-50"
           >
-            {isRegistering ? 'Criar conta gratuita' : 'Entrar'}
+            {loading ? 'A processar...' : isRegistering ? 'Criar conta gratuita' : 'Entrar'}
           </button>
         </form>
 
@@ -128,7 +178,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
               Já tem uma conta?{' '}
               <button 
                 type="button"
-                onClick={() => setIsRegistering(false)} 
+                onClick={() => { setIsRegistering(false); setErrorMessage(''); }} 
                 className="font-semibold text-primary hover:underline cursor-pointer bg-transparent border-0 p-0"
               >
                 Fazer login
@@ -139,7 +189,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
               Ainda não tem conta?{' '}
               <button 
                 type="button"
-                onClick={() => setIsRegistering(true)} 
+                onClick={() => { setIsRegistering(true); setErrorMessage(''); }} 
                 className="font-semibold text-primary hover:underline cursor-pointer bg-transparent border-0 p-0"
               >
                 Criar conta gratuita
