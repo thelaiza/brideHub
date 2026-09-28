@@ -1,25 +1,61 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Calendar, Heart, MapPin, DollarSign } from 'lucide-react';
+import { api } from '../../services/api';
 
 interface EditWeddingDialogProps {
   children: React.ReactNode;
   onSave?: (data: any) => void;
+  initialData?: {
+    bride: string;
+    groom: string;
+    date: string;
+    venue: string;
+    budget: number;
+  } | null;
 }
 
-export const EditWeddingDialog: React.FC<EditWeddingDialogProps> = ({ children, onSave }) => {
+export const EditWeddingDialog: React.FC<EditWeddingDialogProps> = ({ children, onSave, initialData }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [bride, setBride] = useState('Laíza');
-  const [groom, setGroom] = useState('Noivo');
-  const [date, setDate] = useState('2026-10-04');
-  const [venue, setVenue] = useState('Joinville, SC');
-  const [budget, setBudget] = useState('55000');
+  const [bride, setBride] = useState('');
+  const [groom, setGroom] = useState('');
+  const [date, setDate] = useState('');
+  const [venue, setVenue] = useState('');
+  const [budget, setBudget] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (onSave) {
-      onSave({ bride, groom, date, venue, budget: parseFloat(budget) || 0 });
+  useEffect(() => {
+    if (initialData) {
+      setBride(initialData.bride || '');
+      setGroom(initialData.groom || '');
+      setDate(initialData.date ? initialData.date.split('T')[0] : '');
+      setVenue(initialData.venue || '');
+      setBudget(initialData.budget ? initialData.budget.toString() : '');
+    } else {
+      setBride('');
+      setGroom('');
+      setDate('');
+      setVenue('');
+      setBudget('');
     }
-    setIsOpen(false);
+  }, [initialData, isOpen]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await api.put('/api/wedding', {
+        bride,
+        groom,
+        date,
+        venue,
+        budget: parseFloat(budget) || 0,
+      });
+
+      if (onSave) {
+        onSave(response.data);
+      }
+      setIsOpen(false);
+    } catch (error) {
+      console.error('Erro ao salvar dados do casamento:', error);
+    }
   };
 
   return (
@@ -121,7 +157,7 @@ export const EditWeddingDialog: React.FC<EditWeddingDialogProps> = ({ children, 
                 </button>
                 <button 
                   type="submit"
-                  className="px-5 py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-sm font-semibold text-white shadow-lg shadow-rose-600/20 transition-all"
+                  className="px-5 py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-sm font-semibold text-white shadow-lg shadow-rose-600/20 transition-all cursor-pointer"
                 >
                   Salvar Alterações
                 </button>

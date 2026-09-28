@@ -1,11 +1,9 @@
 import { Router } from 'express';
+import { updateWedding } from '../controllers/weddingController.js';
 import { authMiddleware } from '../middlewares/authMiddleware.js';
-import { getDashboardData } from '../controllers/dashboardController.js';
 
 const router = Router();
 
-router.use(authMiddleware);
-
-router.get('/dashboard', getDashboardData);
+router.put('/wedding', authMiddleware, updateWedding);
 
 export default router;

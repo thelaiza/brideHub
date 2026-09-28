@@ -5,7 +5,8 @@ import authRoutes from './routes/authRoutes.js';
 import expenseRoutes from './routes/expenseRoutes.js';
 import taskRoutes from './routes/taskRoutes.js';
 import vendorRoutes from './routes/vendorRoutes.js';
-import dashboardRoutes from './routes/dashboardRoutes.js'; 
+import dashboardRoutes from './routes/dashboardRoutes.js';
+import weddingRoutes from './routes/weddingRoutes.js';
 
 const prisma = new PrismaClient();
 const app = express();
@@ -17,7 +18,8 @@ app.use('/api', authRoutes);
 app.use('/api', expenseRoutes);
 app.use('/api', taskRoutes);
 app.use('/api', vendorRoutes);
-app.use('/api', dashboardRoutes); 
+app.use('/api', dashboardRoutes);
+app.use('/api', weddingRoutes);
 
 app.get('/api/status', async (req, res) => {
   try {

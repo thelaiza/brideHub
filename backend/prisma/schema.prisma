@@ -18,21 +18,37 @@ model User {
   expenses  Expense[]
   vendors   Vendor[]
   tasks     Task[]
+  wedding   Wedding?
 
   @@map("users")
 }
 
+model Wedding {
+  id        String   @id @default(uuid())
+  bride     String   @default("Laíza")
+  groom     String   @default("Marcos")
+  date      String   @default("2026-10-04")
+  venue     String   @default("Joinville, SC")
+  budget    Float    @default(55000)
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("weddings")
+}
+
 model Expense {
-  id          String   @id @default(uuid())
-  title       String
-  category    String
-  amount      Float
-  dueDate     DateTime?
-  status      String   @default("pending") // pending, paid
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(uuid())
+  title     String
+  category  String
+  amount    Float
+  dueDate   DateTime?
+  status    String   @default("pending") // pending, paid
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("expenses")
 }
