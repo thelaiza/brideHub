@@ -34,7 +34,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         });
 
         const { token } = response.data;
-        localStorage.setItem('@BrideHub:token', token);
+        localStorage.setItem('token', token);
         onLogin();
       } else {
         const response = await api.post('/api/auth/login', {
@@ -43,7 +43,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         });
 
         const { token } = response.data;
-        localStorage.setItem('@BrideHub:token', token);
+        localStorage.setItem('token', token);
         onLogin();
       }
     } catch (error: any) {
@@ -67,7 +67,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         });
 
         const { token } = response.data;
-        localStorage.setItem('@BrideHub:token', token);
+        localStorage.setItem('token', token);
         onLogin();
       } catch (error: any) {
         console.error('Erro no login com Google:', error);
