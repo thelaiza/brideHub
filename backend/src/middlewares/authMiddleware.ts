@@ -1,7 +1,10 @@
 import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET: string = process.env.JWT_SECRET || 'fallback_secret';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('ERRO CRÍTICO: A variável de ambiente JWT_SECRET não está definida.');
+}
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
@@ -23,7 +26,7 @@ export function authMiddleware(req: AuthenticatedRequest, res: Response, next: N
   const token = match[1];
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as unknown as { userId: string; email: string };
+    const decoded = jwt.verify(token, JWT_SECRET as string) as unknown as { userId: string; email: string };
     
     req.userId = decoded.userId;
     req.userEmail = decoded.email;
