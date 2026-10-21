@@ -59,6 +59,7 @@ model Vendor {
   category  String
   phone     String?
   status    String   @default("contracted") // contracted, pending, etc.
+  cost      Float    @default(0)
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
