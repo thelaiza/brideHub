@@ -44,7 +44,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
     fetchDashboardData();
   }, []);
 
-  const targetDate = wedding?.date ? new Date(wedding.date + 'T00:00:00') : null;
+  const targetDate = wedding?.date ? new Date(wedding.date.split('T')[0] + 'T00:00:00') : null;
   const today = new Date();
   const diffTime = targetDate ? targetDate.getTime() - today.getTime() : 0;
   const days = Math.max(Math.ceil(diffTime / (1000 * 60 * 60 * 24)), 0);

@@ -11,7 +11,7 @@ router.get('/expenses', async (req: AuthenticatedRequest, res) => {
   try {
     const userId = req.userId;
     if (!userId) {
-      return res.status(401).json({ error: 'Utilizador não autenticado.' });
+      return res.status(401).json({ error: 'Usuário não autenticado.' });
     }
 
     const expenses = await prisma.expense.findMany({
@@ -29,6 +29,10 @@ router.get('/expenses', async (req: AuthenticatedRequest, res) => {
 router.post('/expenses', async (req: AuthenticatedRequest, res) => {
   try {
     const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuário não autenticado.' });
+    }
+
     const { title, category, amount, dueDate, status } = req.body;
 
     if (!title || !category || amount === undefined) {
@@ -60,7 +64,7 @@ router.patch('/expenses/:id', async (req: AuthenticatedRequest, res) => {
     const { title, category, amount, dueDate, status } = req.body;
 
     if (!userId) {
-      return res.status(401).json({ error: 'Utilizador não autenticado.' });
+      return res.status(401).json({ error: 'Usuário não autenticado.' });
     }
 
     const existingExpense = await prisma.expense.findFirst({
@@ -98,7 +102,7 @@ router.delete('/expenses/:id', async (req: AuthenticatedRequest, res) => {
     const id = String(req.params.id);
 
     if (!userId) {
-      return res.status(401).json({ error: 'Utilizador não autenticado.' });
+      return res.status(401).json({ error: 'Usuário não autenticado.' });
     }
 
     const existingExpense = await prisma.expense.findFirst({
