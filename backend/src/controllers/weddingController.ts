@@ -12,22 +12,38 @@ export const updateWedding = async (req: AuthenticatedRequest, res: any) => {
 
     const { bride, groom, date, venue, budget } = req.body;
 
+    if (!bride || !groom || !date || !venue || budget === undefined || budget === '') {
+      return res.status(400).json({ error: 'Todos os campos do casamento são obrigatórios.' });
+    }
+
+    const parsedBudget = Number(budget);
+    if (isNaN(parsedBudget) || parsedBudget < 0) {
+      return res.status(400).json({ error: 'O orçamento deve ser um valor numérico válido.' });
+    }
+
+    const parsedDate = new Date(date);
+    if (isNaN(parsedDate.getTime())) {
+      return res.status(400).json({ error: 'Data do casamento inválida.' });
+    }
+
+    const formattedDate = parsedDate.toISOString();
+
     const wedding = await prisma.wedding.upsert({
       where: { userId },
       update: { 
         bride, 
         groom, 
-        date, 
+        date: formattedDate, 
         venue, 
-        budget: budget ? Number(budget) : 0 
+        budget: parsedBudget 
       },
       create: {
         userId,
         bride,
         groom,
-        date,
+        date: formattedDate,
         venue,
-        budget: budget ? Number(budget) : 0,
+        budget: parsedBudget,
       },
     });
 

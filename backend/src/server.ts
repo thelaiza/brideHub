@@ -8,6 +8,11 @@ import vendorRoutes from './routes/vendorRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import weddingRoutes from './routes/weddingRoutes.js';
 
+if (!process.env.JWT_SECRET) {
+  console.error('ERRO CRÍTICO: A variável de ambiente JWT_SECRET não está definida.');
+  process.exit(1);
+}
+
 const prisma = new PrismaClient();
 const app = express();
 

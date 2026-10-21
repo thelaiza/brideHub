@@ -5,10 +5,11 @@ import { FinanceiroPage } from './pages/FinanceiroPage';
 import { FornecedoresPage } from './pages/FornecedoresPage';
 import { TarefasPage } from './pages/TarefasPage';
 import { LoginPage } from './pages/LoginPage';
+import { TOKEN_KEY } from './services/api';
 
 export function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return !!localStorage.getItem('token');
+    return !!localStorage.getItem(TOKEN_KEY);
   });
 
   const [currentTab, setCurrentTab] = useState<string>(() => {
@@ -32,13 +33,13 @@ export function App() {
 
   const handleLogin = (token?: string) => {
     if (token) {
-      localStorage.setItem('token', token);
+      localStorage.setItem(TOKEN_KEY, token);
     }
     setIsAuthenticated(true);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem('currentTab');
     setIsAuthenticated(false);
   };

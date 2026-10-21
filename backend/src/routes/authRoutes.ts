@@ -74,13 +74,18 @@ router.post('/auth/google', async (req, res) => {
     }
 
     const googleResponse = await axios.get(
-      `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${token}`
+      'https://www.googleapis.com/oauth2/v3/userinfo',
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
     );
 
-    const { email, name } = googleResponse.data;
+    const { email, name, email_verified } = googleResponse.data;
 
-    if (!email) {
-      return res.status(400).json({ error: 'Não foi possível obter o e-mail do Google.' });
+    if (!email || email_verified === false) {
+      return res.status(400).json({ error: 'Não foi possível validar o e-mail do Google.' });
     }
 
     let user = await prisma.user.findUnique({ where: { email } });
@@ -88,7 +93,7 @@ router.post('/auth/google', async (req, res) => {
     if (!user) {
       user = await prisma.user.create({
         data: {
-          name: name || 'Utilizador Google',
+          name: name || 'Usuário Google', 
           email,
           password: '',
         },

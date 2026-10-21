@@ -1,15 +1,19 @@
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
+import React from 'react';
+import ReactDOM from 'react-dom/client';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import App from './App';
 import './index.css';
-import App from './App.tsx';
 
-const GOOGLE_CLIENT_ID = '481163850076-tmq8hsj4u06c67cduhfhpe26qi550eip.apps.googleusercontent.com';
+const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+if (!clientId) {
+  console.warn('Aviso: VITE_GOOGLE_CLIENT_ID não está definido no arquivo .env');
+}
+
+ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
+  <React.StrictMode>
+    <GoogleOAuthProvider clientId={clientId}>
       <App />
     </GoogleOAuthProvider>
-  </StrictMode>,
+  </React.StrictMode>
 );

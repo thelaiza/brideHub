@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Heart, User, Mail, Lock } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
-import { api } from '../services/api';
+import { api, TOKEN_KEY } from '../services/api';
 
 interface LoginPageProps {
-  onLogin: () => void;
+  onLogin: (token?: string) => void;
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
@@ -34,8 +34,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         });
 
         const { token } = response.data;
-        localStorage.setItem('token', token);
-        onLogin();
+        localStorage.setItem(TOKEN_KEY, token);
+        onLogin(token);
       } else {
         const response = await api.post('/api/auth/login', {
           email,
@@ -43,8 +43,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         });
 
         const { token } = response.data;
-        localStorage.setItem('token', token);
-        onLogin();
+        localStorage.setItem(TOKEN_KEY, token);
+        onLogin(token);
       }
     } catch (error: any) {
       console.error('Erro na autenticação:', error);
@@ -67,8 +67,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         });
 
         const { token } = response.data;
-        localStorage.setItem('token', token);
-        onLogin();
+        localStorage.setItem(TOKEN_KEY, token);
+        onLogin(token);
       } catch (error: any) {
         console.error('Erro no login com Google:', error);
         setErrorMessage(
@@ -193,7 +193,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             disabled={loading}
             className="w-full py-3.5 px-4 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-2xl shadow-lg shadow-primary/20 transition-all cursor-pointer mt-2 disabled:opacity-50"
           >
-            {loading ? 'A processar...' : isRegistering ? 'Criar conta gratuita' : 'Entrar'}
+            {loading ? 'Processando...' : isRegistering ? 'Criar conta gratuita' : 'Entrar'}
           </button>
         </form>
 
