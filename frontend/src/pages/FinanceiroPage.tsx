@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { Plus, Search, Filter, CheckCircle2, Clock, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Search, Filter, CheckCircle2, Clock, X, Trash2, Pencil } from 'lucide-react';
 import { NewExpenseDialog } from '../components/dialogs/NewExpenseDialog';
+import { EditExpenseDialog } from '../components/dialogs/EditExpenseDialog';
 import type { Expense } from '../types';
+import { api } from '../services/api';
 
 const CATEGORIES = [
   'Local',
@@ -24,21 +26,68 @@ const CATEGORIES = [
 
 export const FinanceiroPage: React.FC = () => {
   const [isExpenseOpen, setIsExpenseOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
   const [searchTerm, setSearchTerm] = useState('');
-  
-  const [expenses, setExpenses] = useState<Expense[]>([
-    { id: '1', title: 'Buffet Completo (Sinal)', category: 'Buffet', amount: 5000, status: 'Pago', dueDate: '2026-04-15' },
-    { id: '2', title: 'Fotografia e Filme', category: 'Fotografia e Vídeo', amount: 4200, status: 'Pendente', dueDate: '2026-05-28' },
-    { id: '3', title: 'Decoração da Cerimônia', category: 'Decoração e Flores', amount: 3800, status: 'Pendente', dueDate: '2026-06-10' },
-  ]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleAddExpense = (newExpense: Omit<Expense, 'id'>) => {
-    const expenseWithId: Expense = {
-      ...newExpense,
-      id: Math.random().toString(36).substring(2, 9),
-    };
-    setExpenses([expenseWithId, ...expenses]);
+  const fetchExpenses = async () => {
+    try {
+      const response = await api.get('/api/expenses');
+      setExpenses(response.data || []);
+    } catch (error) {
+      console.error('Erro ao carregar despesas:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchExpenses();
+  }, []);
+
+  const handleAddExpense = async (newExpense: Omit<Expense, 'id'>) => {
+    try {
+      const response = await api.post('/api/expenses', {
+        title: newExpense.title,
+        category: newExpense.category,
+        amount: Number(newExpense.amount),
+        dueDate: newExpense.dueDate || null,
+        status: newExpense.status === 'Pago' ? 'paid' : 'pending',
+      });
+      
+      setExpenses([response.data, ...expenses]);
+      setIsExpenseOpen(false);
+    } catch (error) {
+      console.error('Erro ao criar despesa:', error);
+    }
+  };
+
+  const handleUpdateExpense = (updatedExpense: Expense) => {
+    setExpenses(expenses.map(exp => exp.id === updatedExpense.id ? updatedExpense : exp));
+  };
+
+  const handleToggleStatus = async (id: string, currentStatus: 'Pendente' | 'Pago') => {
+    const newStatus = currentStatus === 'Pago' ? 'pending' : 'paid';
+    const displayStatus = currentStatus === 'Pago' ? 'Pendente' : 'Pago';
+
+    try {
+      await api.patch(`/api/expenses/${id}`, { status: newStatus });
+      setExpenses(expenses.map(exp => exp.id === id ? { ...exp, status: displayStatus } : exp));
+    } catch (error) {
+      console.error('Erro ao atualizar status da despesa:', error);
+    }
+  };
+
+  const handleDeleteExpense = async (id: string) => {
+    if (!window.confirm('Tem certeza que deseja excluir esta despesa?')) return;
+    try {
+      await api.delete(`/api/expenses/${id}`);
+      setExpenses(expenses.filter(exp => exp.id !== id));
+    } catch (error) {
+      console.error('Erro ao deletar despesa:', error);
+    }
   };
 
   const filteredExpenses = expenses.filter((expense) => {
@@ -70,7 +119,7 @@ export const FinanceiroPage: React.FC = () => {
             type="text" 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar despesa ou fornecedor..." 
+            placeholder="Buscar despesa ou categoria..." 
             className="w-full pl-11 pr-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring transition-colors text-foreground"
           />
         </div>
@@ -115,10 +164,16 @@ export const FinanceiroPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-border text-sm">
-              {filteredExpenses.length === 0 ? (
+              {loading ? (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-muted-foreground">
-                    Nenhuma despesa encontrada para esta categoria.
+                    Carregando despesas...
+                  </td>
+                </tr>
+              ) : filteredExpenses.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-muted-foreground">
+                    Nenhuma despesa encontrada.
                   </td>
                 </tr>
               ) : (
@@ -130,16 +185,39 @@ export const FinanceiroPage: React.FC = () => {
                         {expense.category}
                       </span>
                     </td>
-                    <td className="py-4 px-6 font-bold text-foreground">R$ {expense.amount.toLocaleString('pt-BR')}</td>
-                    <td className="py-4 px-6 text-muted-foreground">{expense.dueDate}</td>
-                    <td className="py-4 px-6">
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
-                        expense.status === 'Pago' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
-                      }`}>
-                        {expense.status === 'Pago' ? <CheckCircle2 size={14} /> : <Clock size={14} />} {expense.status}
-                      </span>
+                    <td className="py-4 px-6 font-bold text-foreground">R$ {Number(expense.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                    <td className="py-4 px-6 text-muted-foreground">
+                      {expense.dueDate ? new Date(expense.dueDate.split('T')[0] + 'T00:00:00').toLocaleDateString('pt-BR') : 'Sem data'}
                     </td>
-                    <td className="py-4 px-6 text-right font-medium text-muted-foreground hover:text-foreground cursor-pointer">Editar</td>
+                    <td className="py-4 px-6">
+                      <button 
+                        onClick={() => handleToggleStatus(expense.id, expense.status)}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-transform hover:scale-105 ${
+                          expense.status === 'Pago' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+                        }`}
+                        title="Clique para alternar o status"
+                      >
+                        {expense.status === 'Pago' ? <CheckCircle2 size={14} /> : <Clock size={14} />} {expense.status}
+                      </button>
+                    </td>
+                    <td className="py-4 px-6 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button 
+                          onClick={() => setEditingExpense(expense)}
+                          className="text-muted-foreground hover:text-primary transition-colors p-1 cursor-pointer"
+                          title="Editar despesa"
+                        >
+                          <Pencil size={16} />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteExpense(expense.id)}
+                          className="text-muted-foreground hover:text-red-500 transition-colors p-1 cursor-pointer"
+                          title="Excluir despesa"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))
               )}
@@ -152,6 +230,13 @@ export const FinanceiroPage: React.FC = () => {
         isOpen={isExpenseOpen}
         onClose={() => setIsExpenseOpen(false)}
         onSave={handleAddExpense}
+      />
+
+      <EditExpenseDialog 
+        isOpen={!!editingExpense}
+        onClose={() => setEditingExpense(null)}
+        expense={editingExpense}
+        onSave={handleUpdateExpense}
       />
     </div>
   );
