@@ -72,10 +72,12 @@ model Task {
   id          String   @id @default(uuid())
   title       String
   description String?  
+  category    String   @default("Geral")
+  status      String   @default("todo")
   completed   Boolean  @default(false)
   dueDate     DateTime?
   userId      String
-  user        User     @relation(fields: [userId], references: [id])
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

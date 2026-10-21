@@ -3,17 +3,29 @@ import { Plus, CheckSquare, Clock, AlertCircle, MoreVertical, Edit2, Trash2 } fr
 import { NewTaskDialog } from '../components/dialogs/NewTaskDialog';
 import { EditTaskDialog } from '../components/dialogs/EditTaskDialog';
 import type { Task } from '../types';
+import { api } from '../services/api';
 
 export const TarefasPage: React.FC = () => {
   const [isTaskOpen, setIsTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [tasks, setTasks] = useState<Task[]>([
-    { id: '1', title: 'Definir lista final de padrinhos e madrinhas', category: 'Papelaria', status: 'todo', dueDate: '20/04' },
-    { id: '2', title: 'Reunião de alinhamento com a cerimonialista', category: 'Cerimonial', status: 'doing', dueDate: 'Hoje' },
-    { id: '3', title: 'Assinar contrato do salão principal', category: 'Local', status: 'done', dueDate: 'Concluído' },
-  ]);
+  const fetchTasks = async () => {
+    try {
+      const response = await api.get('/api/tasks');
+      setTasks(response.data || []);
+    } catch (error) {
+      console.error('Erro ao carregar tarefas:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTasks();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = () => setActiveMenuId(null);
@@ -21,12 +33,20 @@ export const TarefasPage: React.FC = () => {
     return () => window.removeEventListener('click', handleClickOutside);
   }, []);
 
-  const handleAddTask = (newTask: Omit<Task, 'id'>) => {
-    const taskWithId: Task = {
-      ...newTask,
-      id: Math.random().toString(36).substring(2, 9),
-    };
-    setTasks([...tasks, taskWithId]);
+  const handleAddTask = async (newTask: Omit<Task, 'id'>) => {
+    try {
+      const response = await api.post('/api/tasks', {
+        title: newTask.title,
+        category: newTask.category,
+        dueDate: newTask.dueDate || null,
+        status: newTask.status || 'todo',
+      });
+
+      setTasks([response.data, ...tasks]);
+      setIsTaskOpen(false);
+    } catch (error) {
+      console.error('Erro ao criar tarefa:', error);
+    }
   };
 
   const handleUpdateTask = (updatedTask: Task) => {
@@ -34,10 +54,17 @@ export const TarefasPage: React.FC = () => {
     setEditingTask(null);
   };
 
-  const handleDeleteTask = (id: string, e: React.MouseEvent) => {
+  const handleDeleteTask = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setTasks(tasks.filter(t => t.id !== id));
-    setActiveMenuId(null);
+    if (!window.confirm('Tem certeza que deseja excluir esta tarefa?')) return;
+
+    try {
+      await api.delete(`/api/tasks/${id}`);
+      setTasks(tasks.filter(t => t.id !== id));
+      setActiveMenuId(null);
+    } catch (error) {
+      console.error('Erro ao deletar tarefa:', error);
+    }
   };
 
   const renderTaskCard = (task: Task) => {
@@ -47,7 +74,7 @@ export const TarefasPage: React.FC = () => {
       <div key={task.id} className="bg-card p-4 rounded-2xl border border-border shadow-sm space-y-2 relative hover:border-ring transition-colors">
         <div className="flex justify-between items-start">
           <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary uppercase tracking-wider">
-            {task.category}
+            {task.category || 'Geral'}
           </span>
 
           <div className="relative">
@@ -91,9 +118,9 @@ export const TarefasPage: React.FC = () => {
         </p>
 
         <div className="flex justify-between items-center text-xs text-muted-foreground pt-2 border-t border-border">
-          <span>Vencimento: {task.dueDate}</span>
+          <span>Vencimento: {task.dueDate ? new Date(task.dueDate.split('T')[0] + 'T00:00:00').toLocaleDateString('pt-BR') : 'Sem data'}</span>
           <span className={task.status === 'done' ? 'text-emerald-600 font-medium' : 'text-amber-600 font-medium'}>
-            {task.status === 'done' ? 'Feito' : 'Pendente'}
+            {task.status === 'done' ? 'Feito' : task.status === 'doing' ? 'Em andamento' : 'Pendente'}
           </span>
         </div>
       </div>
@@ -115,52 +142,68 @@ export const TarefasPage: React.FC = () => {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-        <div className="bg-muted/70 p-4 rounded-3xl border border-border space-y-4">
-          <div className="flex items-center justify-between px-2">
-            <div className="flex items-center gap-2">
-              <Clock size={18} className="text-amber-500" />
-              <h4 className="font-bold text-foreground text-sm">A Fazer</h4>
+      {loading ? (
+        <div className="py-12 text-center text-muted-foreground">Carregando tarefas...</div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+          <div className="bg-muted/70 p-4 rounded-3xl border border-border space-y-4">
+            <div className="flex items-center justify-between px-2">
+              <div className="flex items-center gap-2">
+                <Clock size={18} className="text-amber-500" />
+                <h4 className="font-bold text-foreground text-sm">A Fazer</h4>
+              </div>
+              <span className="w-6 h-6 rounded-full bg-muted text-foreground flex items-center justify-center text-xs font-bold">
+                {tasks.filter(t => t.status === 'todo').length}
+              </span>
             </div>
-            <span className="w-6 h-6 rounded-full bg-muted text-foreground flex items-center justify-center text-xs font-bold">
-              {tasks.filter(t => t.status === 'todo').length}
-            </span>
+            <div className="space-y-3">
+              {tasks.filter(t => t.status === 'todo').length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-4">Nenhuma tarefa a fazer.</p>
+              ) : (
+                tasks.filter(t => t.status === 'todo').map(renderTaskCard)
+              )}
+            </div>
           </div>
-          <div className="space-y-3">
-            {tasks.filter(t => t.status === 'todo').map(renderTaskCard)}
-          </div>
-        </div>
 
-        <div className="bg-muted/70 p-4 rounded-3xl border border-border space-y-4">
-          <div className="flex items-center justify-between px-2">
-            <div className="flex items-center gap-2">
-              <AlertCircle size={18} className="text-rose-500" />
-              <h4 className="font-bold text-foreground text-sm">Em Andamento</h4>
+          <div className="bg-muted/70 p-4 rounded-3xl border border-border space-y-4">
+            <div className="flex items-center justify-between px-2">
+              <div className="flex items-center gap-2">
+                <AlertCircle size={18} className="text-rose-500" />
+                <h4 className="font-bold text-foreground text-sm">Em Andamento</h4>
+              </div>
+              <span className="w-6 h-6 rounded-full bg-muted text-foreground flex items-center justify-center text-xs font-bold">
+                {tasks.filter(t => t.status === 'doing').length}
+              </span>
             </div>
-            <span className="w-6 h-6 rounded-full bg-muted text-foreground flex items-center justify-center text-xs font-bold">
-              {tasks.filter(t => t.status === 'doing').length}
-            </span>
+            <div className="space-y-3">
+              {tasks.filter(t => t.status === 'doing').length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-4">Nenhuma tarefa em andamento.</p>
+              ) : (
+                tasks.filter(t => t.status === 'doing').map(renderTaskCard)
+              )}
+            </div>
           </div>
-          <div className="space-y-3">
-            {tasks.filter(t => t.status === 'doing').map(renderTaskCard)}
-          </div>
-        </div>
 
-        <div className="bg-muted/70 p-4 rounded-3xl border border-border space-y-4">
-          <div className="flex items-center justify-between px-2">
-            <div className="flex items-center gap-2">
-              <CheckSquare size={18} className="text-emerald-500" />
-              <h4 className="font-bold text-foreground text-sm">Concluído</h4>
+          <div className="bg-muted/70 p-4 rounded-3xl border border-border space-y-4">
+            <div className="flex items-center justify-between px-2">
+              <div className="flex items-center gap-2">
+                <CheckSquare size={18} className="text-emerald-500" />
+                <h4 className="font-bold text-foreground text-sm">Concluído</h4>
+              </div>
+              <span className="w-6 h-6 rounded-full bg-muted text-foreground flex items-center justify-center text-xs font-bold">
+                {tasks.filter(t => t.status === 'done').length}
+              </span>
             </div>
-            <span className="w-6 h-6 rounded-full bg-muted text-foreground flex items-center justify-center text-xs font-bold">
-              {tasks.filter(t => t.status === 'done').length}
-            </span>
-          </div>
-          <div className="space-y-3">
-            {tasks.filter(t => t.status === 'done').map(renderTaskCard)}
+            <div className="space-y-3">
+              {tasks.filter(t => t.status === 'done').length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-4">Nenhuma tarefa concluída.</p>
+              ) : (
+                tasks.filter(t => t.status === 'done').map(renderTaskCard)
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <NewTaskDialog 
         isOpen={isTaskOpen}

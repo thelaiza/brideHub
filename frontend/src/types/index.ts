@@ -27,7 +27,9 @@ export interface Vendor {
 export interface Task {
   id: string;
   title: string;
+  description?: string;
   category: string;
   status: 'todo' | 'doing' | 'done';
+  completed?: boolean;
   dueDate: string;
 }

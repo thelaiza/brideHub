@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, CheckSquare, Calendar, Tag, FileText } from 'lucide-react';
+import { X, Calendar, Tag, FileText } from 'lucide-react';
+import { api } from '../../services/api';
 import type { Task } from '../../types';
 
 interface EditTaskDialogProps {
@@ -18,31 +19,44 @@ const CATEGORIES = [
 
 export const EditTaskDialog: React.FC<EditTaskDialogProps> = ({ isOpen, task, onClose, onSave }) => {
   const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [dueDate, setDueDate] = useState('');
   const [status, setStatus] = useState<'todo' | 'doing' | 'done'>('todo');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (task) {
-      setTitle(task.title);
-      setCategory(task.category);
-      setDueDate(task.dueDate || '');
-      setStatus(task.status);
+      setTitle(task.title || '');
+      setDescription(task.description || '');
+      setCategory(task.category || CATEGORIES[0]);
+      setDueDate(task.dueDate ? task.dueDate.split('T')[0] : '');
+      setStatus(task.status || 'todo');
     }
   }, [task]);
 
   if (!isOpen || !task) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({
-      ...task,
-      title,
-      category,
-      dueDate,
-      status
-    });
-    onClose();
+    setLoading(true);
+
+    try {
+      const response = await api.patch(`/api/tasks/${task.id}`, {
+        title,
+        description,
+        category,
+        dueDate: dueDate || null,
+        status,
+      });
+
+      onSave(response.data);
+      onClose();
+    } catch (error) {
+      console.error('Erro ao atualizar tarefa:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -68,6 +82,16 @@ export const EditTaskDialog: React.FC<EditTaskDialogProps> = ({ isOpen, task, on
                 className="w-full pl-11 pr-4 py-3 bg-muted/50 border border-border rounded-2xl text-sm text-foreground focus:outline-none focus:border-ring"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Descrição</label>
+            <textarea 
+              rows={2}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full px-4 py-3 bg-muted/50 border border-border rounded-2xl text-sm text-foreground focus:outline-none focus:border-ring resize-none"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -106,10 +130,9 @@ export const EditTaskDialog: React.FC<EditTaskDialogProps> = ({ isOpen, task, on
             <div className="relative">
               <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
               <input 
-                type="text" 
+                type="date" 
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                placeholder="Ex: 20/04 ou Hoje"
                 className="w-full pl-11 pr-4 py-3 bg-muted/50 border border-border rounded-2xl text-sm text-foreground focus:outline-none focus:border-ring"
               />
             </div>
@@ -125,9 +148,10 @@ export const EditTaskDialog: React.FC<EditTaskDialogProps> = ({ isOpen, task, on
             </button>
             <button 
               type="submit"
-              className="px-5 py-2.5 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold shadow-lg shadow-primary/20 transition-all cursor-pointer"
+              disabled={loading}
+              className="px-5 py-2.5 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold shadow-lg shadow-primary/20 transition-all cursor-pointer disabled:opacity-50"
             >
-              Salvar Alterações
+              {loading ? 'Salvando...' : 'Salvar Alterações'}
             </button>
           </div>
         </form>
