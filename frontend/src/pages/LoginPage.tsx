@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Heart, User, Mail, Lock } from 'lucide-react';
+import { useGoogleLogin } from '@react-oauth/google';
+import { api, TOKEN_KEY } from '../services/api';
 
 interface LoginPageProps {
-  onLogin: () => void;
+  onLogin: (token?: string) => void;
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
@@ -10,11 +12,76 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onLogin();
+    setLoading(true);
+    setErrorMessage('');
+
+    try {
+      if (isRegistering) {
+        await api.post('/api/auth/register', {
+          name,
+          email,
+          password,
+        });
+        
+        const response = await api.post('/api/auth/login', {
+          email,
+          password,
+        });
+
+        const { token } = response.data;
+        localStorage.setItem(TOKEN_KEY, token);
+        onLogin(token);
+      } else {
+        const response = await api.post('/api/auth/login', {
+          email,
+          password,
+        });
+
+        const { token } = response.data;
+        localStorage.setItem(TOKEN_KEY, token);
+        onLogin(token);
+      }
+    } catch (error: any) {
+      console.error('Erro na autenticação:', error);
+      setErrorMessage(
+        error.response?.data?.error || 'Ocorreu um erro ao processar a requisição. Tente novamente.'
+      );
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        setLoading(true);
+        setErrorMessage('');
+
+        const response = await api.post('/api/auth/google', {
+          token: tokenResponse.access_token,
+        });
+
+        const { token } = response.data;
+        localStorage.setItem(TOKEN_KEY, token);
+        onLogin(token);
+      } catch (error: any) {
+        console.error('Erro no login com Google:', error);
+        setErrorMessage(
+          error.response?.data?.error || 'Erro ao autenticar com o Google. Tente novamente.'
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    onError: () => {
+      setErrorMessage('Falha na autenticação com o Google.');
+    },
+  });
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{
@@ -37,10 +104,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           </div>
         </div>
 
+        {errorMessage && (
+          <div className="p-3 text-xs text-red-500 bg-red-500/10 border border-red-500/20 rounded-xl text-center">
+            {errorMessage}
+          </div>
+        )}
+
         <button
           type="button"
-          onClick={onLogin}
-          className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-border rounded-2xl text-sm font-semibold text-foreground bg-card hover:bg-muted/50 transition-all shadow-sm cursor-pointer"
+          onClick={() => googleLogin()}
+          disabled={loading}
+          className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-border rounded-2xl text-sm font-semibold text-foreground bg-card hover:bg-muted/50 transition-all shadow-sm cursor-pointer disabled:opacity-50"
         >
           <svg className="size-5" viewBox="0 0 24 24">
             <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.8 7.3l3.7 2.9C6.4 7.2 9 5 12 5z"/>
@@ -116,9 +190,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
           <button 
             type="submit"
-            className="w-full py-3.5 px-4 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-2xl shadow-lg shadow-primary/20 transition-all cursor-pointer mt-2"
+            disabled={loading}
+            className="w-full py-3.5 px-4 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-2xl shadow-lg shadow-primary/20 transition-all cursor-pointer mt-2 disabled:opacity-50"
           >
-            {isRegistering ? 'Criar conta gratuita' : 'Entrar'}
+            {loading ? 'Processando...' : isRegistering ? 'Criar conta gratuita' : 'Entrar'}
           </button>
         </form>
 
@@ -128,7 +203,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
               Já tem uma conta?{' '}
               <button 
                 type="button"
-                onClick={() => setIsRegistering(false)} 
+                onClick={() => { setIsRegistering(false); setErrorMessage(''); }} 
                 className="font-semibold text-primary hover:underline cursor-pointer bg-transparent border-0 p-0"
               >
                 Fazer login
@@ -139,7 +214,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
               Ainda não tem conta?{' '}
               <button 
                 type="button"
-                onClick={() => setIsRegistering(true)} 
+                onClick={() => { setIsRegistering(true); setErrorMessage(''); }} 
                 className="font-semibold text-primary hover:underline cursor-pointer bg-transparent border-0 p-0"
               >
                 Criar conta gratuita

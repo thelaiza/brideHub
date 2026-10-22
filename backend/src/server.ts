@@ -5,7 +5,13 @@ import authRoutes from './routes/authRoutes.js';
 import expenseRoutes from './routes/expenseRoutes.js';
 import taskRoutes from './routes/taskRoutes.js';
 import vendorRoutes from './routes/vendorRoutes.js';
-import dashboardRoutes from './routes/dashboardRoutes.js'; 
+import dashboardRoutes from './routes/dashboardRoutes.js';
+import weddingRoutes from './routes/weddingRoutes.js';
+
+if (!process.env.JWT_SECRET) {
+  console.error('ERRO CRÍTICO: A variável de ambiente JWT_SECRET não está definida.');
+  process.exit(1);
+}
 
 const prisma = new PrismaClient();
 const app = express();
@@ -17,7 +23,8 @@ app.use('/api', authRoutes);
 app.use('/api', expenseRoutes);
 app.use('/api', taskRoutes);
 app.use('/api', vendorRoutes);
-app.use('/api', dashboardRoutes); 
+app.use('/api', dashboardRoutes);
+app.use('/api', weddingRoutes);
 
 app.get('/api/status', async (req, res) => {
   try {
@@ -31,5 +38,5 @@ app.get('/api/status', async (req, res) => {
 const PORT = process.env.API_PORT || 3333;
 
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor rodando na porta ${PORT}`);
+  console.log(`Servidor rodando na porta ${PORT}`);
 });

@@ -18,21 +18,37 @@ model User {
   expenses  Expense[]
   vendors   Vendor[]
   tasks     Task[]
+  wedding   Wedding?
 
   @@map("users")
 }
 
+model Wedding {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bride     String
+  groom     String
+  date      DateTime
+  venue     String
+  budget    Float    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("weddings")
+}
+
 model Expense {
-  id          String   @id @default(uuid())
-  title       String
-  category    String
-  amount      Float
-  dueDate     DateTime?
-  status      String   @default("pending") // pending, paid
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(uuid())
+  title     String
+  category  String
+  amount    Float
+  dueDate   DateTime?
+  status    String   @default("pending") // pending, paid
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("expenses")
 }
@@ -43,6 +59,7 @@ model Vendor {
   category  String
   phone     String?
   status    String   @default("contracted") // contracted, pending, etc.
+  cost      Float    @default(0)
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
@@ -55,10 +72,12 @@ model Task {
   id          String   @id @default(uuid())
   title       String
   description String?  
+  category    String   @default("Geral")
+  status      String   @default("todo")
   completed   Boolean  @default(false)
   dueDate     DateTime?
   userId      String
-  user        User     @relation(fields: [userId], references: [id])
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

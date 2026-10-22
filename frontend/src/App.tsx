@@ -5,10 +5,16 @@ import { FinanceiroPage } from './pages/FinanceiroPage';
 import { FornecedoresPage } from './pages/FornecedoresPage';
 import { TarefasPage } from './pages/TarefasPage';
 import { LoginPage } from './pages/LoginPage';
+import { TOKEN_KEY } from './services/api';
 
 export function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentTab, setCurrentTab] = useState('dashboard');
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return !!localStorage.getItem(TOKEN_KEY);
+  });
+
+  const [currentTab, setCurrentTab] = useState<string>(() => {
+    return localStorage.getItem('currentTab') || 'dashboard';
+  });
 
   useEffect(() => {
     const titles: Record<string, string> = {
@@ -20,18 +26,35 @@ export function App() {
     document.title = titles[currentTab] || 'BrideHub — Organização de Casamento';
   }, [currentTab]);
 
-  // Se não estiver logado, exibe a tela de login
+  const handleTabChange = (tab: string) => {
+    setCurrentTab(tab);
+    localStorage.setItem('currentTab', tab);
+  };
+
+  const handleLogin = (token?: string) => {
+    if (token) {
+      localStorage.setItem(TOKEN_KEY, token);
+    }
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem('currentTab');
+    setIsAuthenticated(false);
+  };
+
   if (!isAuthenticated) {
-    return <LoginPage onLogin={() => setIsAuthenticated(true)} />;
+    return <LoginPage onLogin={handleLogin} />;
   }
 
   return (
     <AppShell 
       currentTab={currentTab} 
-      onTabChange={setCurrentTab}
-      onLogout={() => setIsAuthenticated(false)}
+      onTabChange={handleTabChange}
+      onLogout={handleLogout}
     >
-      {currentTab === 'dashboard' && <DashboardPage onNavigate={setCurrentTab} />}
+      {currentTab === 'dashboard' && <DashboardPage onNavigate={handleTabChange} />}
       {currentTab === 'financeiro' && <FinanceiroPage />}
       {currentTab === 'fornecedores' && <FornecedoresPage />}
       {currentTab === 'tarefas' && <TarefasPage />}
