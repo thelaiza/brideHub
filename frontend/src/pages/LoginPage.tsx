@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Heart, User, Mail, Lock } from 'lucide-react';
-import { useGoogleLogin } from '@react-oauth/google';
+import { GoogleLogin } from '@react-oauth/google';
 import { api, TOKEN_KEY } from '../services/api';
 
 interface LoginPageProps {
@@ -56,32 +56,27 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     }
   };
 
-  const googleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      try {
-        setLoading(true);
-        setErrorMessage('');
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    try {
+      setLoading(true);
+      setErrorMessage('');
 
-        const response = await api.post('/api/auth/google', {
-          token: tokenResponse.access_token,
-        });
+      const response = await api.post('/api/auth/google', {
+        token: credentialResponse.credential,
+      });
 
-        const { token } = response.data;
-        localStorage.setItem(TOKEN_KEY, token);
-        onLogin(token);
-      } catch (error: any) {
-        console.error('Erro no login com Google:', error);
-        setErrorMessage(
-          error.response?.data?.error || 'Erro ao autenticar com o Google. Tente novamente.'
-        );
-      } finally {
-        setLoading(false);
-      }
-    },
-    onError: () => {
-      setErrorMessage('Falha na autenticação com o Google.');
-    },
-  });
+      const { token } = response.data;
+      localStorage.setItem(TOKEN_KEY, token);
+      onLogin(token);
+    } catch (error: any) {
+      console.error('Erro no login com Google:', error);
+      setErrorMessage(
+        error.response?.data?.error || 'Erro ao autenticar com o Google. Tente novamente.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{
@@ -110,20 +105,18 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           </div>
         )}
 
-        <button
-          type="button"
-          onClick={() => googleLogin()}
-          disabled={loading}
-          className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-border rounded-2xl text-sm font-semibold text-foreground bg-card hover:bg-muted/50 transition-all shadow-sm cursor-pointer disabled:opacity-50"
-        >
-          <svg className="size-5" viewBox="0 0 24 24">
-            <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.8 7.3l3.7 2.9C6.4 7.2 9 5 12 5z"/>
-            <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/>
-            <path fill="#FBBC05" d="M5.5 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.8 7.3C.7 9.5 0 10.7 0 12s.7 2.5 1.8 4.7l3.7-2.9z"/>
-            <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.6-2.2-6.5-5.2L1.8 16c1.9 3.7 5.7 7 10.2 7z"/>
-          </svg>
-          Continuar com o Google
-        </button>
+        <div className="flex justify-center w-full">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => {
+              setErrorMessage('Falha na autenticação com o Google.');
+            }}
+            useOneTap={false}
+            theme="outline"
+            shape="pill"
+            width="100%"
+          />
+        </div>
 
         <div className="relative flex items-center justify-center">
           <div className="absolute inset-0 flex items-center">
