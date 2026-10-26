@@ -29,6 +29,15 @@ const CATEGORIES = [
   'Outros'
 ];
 
+// Funções de mapeamento para unificar o formato API (inglês) e UI (português)
+const toUiStatus = (apiStatus?: string): 'Pendente' | 'Pago' => {
+  return apiStatus === 'paid' ? 'Pago' : 'Pendente';
+};
+
+const toApiStatus = (uiStatus: 'Pendente' | 'Pago'): 'pending' | 'paid' => {
+  return uiStatus === 'Pago' ? 'paid' : 'pending';
+};
+
 export const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({ isOpen, onClose, expense, onSave }) => {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState(CATEGORIES[0]);
@@ -43,7 +52,7 @@ export const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({ isOpen, on
       setCategory(expense.category || CATEGORIES[0]);
       setAmount(expense.amount ? expense.amount.toString() : '');
       setDueDate(expense.dueDate ? expense.dueDate.split('T')[0] : '');
-      setStatus(expense.status || 'Pendente');
+      setStatus(toUiStatus(expense.status)); 
     }
   }, [expense]);
 
@@ -60,7 +69,7 @@ export const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({ isOpen, on
         category,
         amount: parseFloat(amount) || 0,
         dueDate: dueDate || null,
-        status: status === 'Pago' ? 'paid' : 'pending',
+        status: toApiStatus(status), 
       });
 
       onSave(response.data);

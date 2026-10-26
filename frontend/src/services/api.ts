@@ -20,7 +20,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      if (window.location.pathname !== '/' && localStorage.getItem(TOKEN_KEY)) {
+      if (localStorage.getItem(TOKEN_KEY)) {
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem('currentTab');
         window.location.href = '/';
