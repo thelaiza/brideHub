@@ -24,6 +24,14 @@ const CATEGORIES = [
   'Outros'
 ];
 
+const toUiStatus = (apiStatus?: string): 'Pendente' | 'Pago' => {
+  return apiStatus === 'paid' ? 'Pago' : 'Pendente';
+};
+
+const toApiStatus = (uiStatus: 'Pendente' | 'Pago'): 'pending' | 'paid' => {
+  return uiStatus === 'Pago' ? 'paid' : 'pending';
+};
+
 export const FinanceiroPage: React.FC = () => {
   const [isExpenseOpen, setIsExpenseOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
@@ -35,7 +43,11 @@ export const FinanceiroPage: React.FC = () => {
   const fetchExpenses = async () => {
     try {
       const response = await api.get('/api/expenses');
-      setExpenses(response.data || []);
+      const mappedExpenses = (response.data || []).map((exp: any) => ({
+        ...exp,
+        status: toUiStatus(exp.status)
+      }));
+      setExpenses(mappedExpenses);
     } catch (error) {
       console.error('Erro ao carregar despesas:', error);
     } finally {
@@ -54,10 +66,15 @@ export const FinanceiroPage: React.FC = () => {
         category: newExpense.category,
         amount: Number(newExpense.amount),
         dueDate: newExpense.dueDate || null,
-        status: newExpense.status === 'Pago' ? 'paid' : 'pending',
+        status: toApiStatus(newExpense.status as 'Pendente' | 'Pago'),
       });
       
-      setExpenses([response.data, ...expenses]);
+      const createdExpense = {
+        ...response.data,
+        status: toUiStatus(response.data.status)
+      };
+
+      setExpenses([createdExpense, ...expenses]);
       setIsExpenseOpen(false);
     } catch (error) {
       console.error('Erro ao criar despesa:', error);
@@ -65,16 +82,20 @@ export const FinanceiroPage: React.FC = () => {
   };
 
   const handleUpdateExpense = (updatedExpense: Expense) => {
-    setExpenses(expenses.map(exp => exp.id === updatedExpense.id ? updatedExpense : exp));
+    const mappedUpdated = {
+      ...updatedExpense,
+      status: toUiStatus(updatedExpense.status)
+    };
+    setExpenses(expenses.map(exp => exp.id === mappedUpdated.id ? mappedUpdated : exp));
   };
 
   const handleToggleStatus = async (id: string, currentStatus: 'Pendente' | 'Pago') => {
-    const newStatus = currentStatus === 'Pago' ? 'pending' : 'paid';
-    const displayStatus = currentStatus === 'Pago' ? 'Pendente' : 'Pago';
+    const nextUiStatus = currentStatus === 'Pago' ? 'Pendente' : 'Pago';
+    const nextApiStatus = toApiStatus(nextUiStatus);
 
     try {
-      await api.patch(`/api/expenses/${id}`, { status: newStatus });
-      setExpenses(expenses.map(exp => exp.id === id ? { ...exp, status: displayStatus } : exp));
+      await api.patch(`/api/expenses/${id}`, { status: nextApiStatus });
+      setExpenses(expenses.map(exp => exp.id === id ? { ...exp, status: nextUiStatus } : exp));
     } catch (error) {
       console.error('Erro ao atualizar status da despesa:', error);
     }

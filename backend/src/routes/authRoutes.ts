@@ -2,11 +2,12 @@ import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import axios from 'axios';
+import { OAuth2Client } from 'google-auth-library';
 
 const router = Router();
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 router.post('/auth/register', async (req, res) => {
   try {
@@ -67,26 +68,26 @@ router.post('/auth/login', async (req, res) => {
 
 router.post('/auth/google', async (req, res) => {
   try {
-    const { token } = req.body;
+    const { token } = req.body; // Aqui agora esperamos o idToken (credential) do GoogleLogin
 
     if (!token) {
       return res.status(400).json({ error: 'Token do Google não fornecido.' });
     }
 
-    const googleResponse = await axios.get(
-      'https://www.googleapis.com/oauth2/v3/userinfo',
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    // Validação segura do ID Token utilizando o Client ID da nossa aplicação[cite: 2]
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
 
-    const { email, name, email_verified } = googleResponse.data;
+    const payload = ticket.getPayload();
 
-    if (!email || email_verified === false) {
+    if (!payload || !payload.email || payload.email_verified === false) {
       return res.status(400).json({ error: 'Não foi possível validar o e-mail do Google.' });
     }
+
+    const email = payload.email;
+    const name = payload.name;
 
     let user = await prisma.user.findUnique({ where: { email } });
 
@@ -114,7 +115,7 @@ router.post('/auth/google', async (req, res) => {
     });
   } catch (error) {
     console.error('Erro na autenticação Google:', error);
-    return res.status(500).json({ error: 'Erro ao autenticar com o Google.' });
+    return res.status(401).json({ error: 'Token do Google inválido ou expirado.' });
   }
 });
 
