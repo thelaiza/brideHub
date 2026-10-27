@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Tag, Phone, DollarSign, CheckCircle } from 'lucide-react';
+import { X, User, Tag, Phone, Mail, DollarSign } from 'lucide-react';
 import { api } from '../../services/api';
 import type { Vendor } from '../../types';
 
