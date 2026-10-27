@@ -26,6 +26,7 @@ export const EditVendorDialog: React.FC<EditVendorDialogProps> = ({ isOpen, onCl
   const [name, setName] = useState('');
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [cost, setCost] = useState('');
   const [status, setStatus] = useState<'Contratado' | 'Orçamento' | 'Pesquisando'>('Pesquisando');
   const [loading, setLoading] = useState(false);
@@ -35,6 +36,7 @@ export const EditVendorDialog: React.FC<EditVendorDialogProps> = ({ isOpen, onCl
       setName(vendor.name || '');
       setCategory(vendor.category || CATEGORIES[0]);
       setPhone(vendor.phone || '');
+      setEmail(vendor.email || ''); 
       setCost(vendor.cost !== undefined ? vendor.cost.toString() : '');
       setStatus(vendor.status || 'Pesquisando');
     }
@@ -52,6 +54,7 @@ export const EditVendorDialog: React.FC<EditVendorDialogProps> = ({ isOpen, onCl
         name,
         category,
         phone,
+        email,
         cost: parseFloat(cost) || 0,
         status,
       });
@@ -132,6 +135,20 @@ export const EditVendorDialog: React.FC<EditVendorDialogProps> = ({ isOpen, onCl
                   className="w-full pl-11 pr-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring text-foreground"
                 />
               </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">E-mail</label>
+            <div className="relative">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+              <input 
+                type="email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="contato@fornecedor.com"
+                className="w-full pl-11 pr-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring text-foreground"
+              />
             </div>
           </div>
 

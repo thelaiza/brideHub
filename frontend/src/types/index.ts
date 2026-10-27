@@ -22,6 +22,7 @@ export interface Vendor {
   phone: string;
   status: 'Contratado' | 'Orçamento' | 'Pesquisando';
   cost: number;
+  email: string;
 }
 
 export interface Task {
