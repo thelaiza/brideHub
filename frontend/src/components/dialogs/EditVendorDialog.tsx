@@ -17,7 +17,7 @@ const CATEGORIES = [
   'Bolo e Doces',
   'Decoração e Flores',
   'Música e Animação',
-  'Vestida e Beleza',
+  'Vestido e Beleza',
   'Cerimonial',
   'Outros'
 ];
@@ -111,7 +111,7 @@ export const EditVendorDialog: React.FC<EditVendorDialogProps> = ({ isOpen, onCl
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Telefone / Contato</label>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Telefone</label>
               <div className="relative">
                 <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
                 <input 

@@ -58,6 +58,7 @@ model Vendor {
   name      String
   category  String
   phone     String?
+  email     String? 
   status    String   @default("contracted") // contracted, pending, etc.
   cost      Float    @default(0)
   userId    String

@@ -29,7 +29,7 @@ export const createVendor = async (req: AuthenticatedRequest, res: any) => {
       return res.status(401).json({ error: 'Usuário não autenticado.' });
     }
 
-    const { name, category, phone, status, cost } = req.body;
+    const { name, category, phone, email, status, cost } = req.body;
 
     if (!name || !category) {
       return res.status(400).json({ error: 'Nome e categoria do fornecedor são obrigatórios.' });
@@ -40,6 +40,7 @@ export const createVendor = async (req: AuthenticatedRequest, res: any) => {
         name,
         category,
         phone: phone || null,
+        email: email || null, 
         status: status || 'Contratado',
         cost: cost !== undefined && cost !== '' ? Number(cost) : 0,
         userId: userId as string,
@@ -57,7 +58,7 @@ export const updateVendor = async (req: AuthenticatedRequest, res: any) => {
   try {
     const userId = req.userId;
     const id = String(req.params.id);
-    const { name, category, phone, status, cost } = req.body;
+    const { name, category, phone, email, status, cost } = req.body;
 
     if (!userId) {
       return res.status(401).json({ error: 'Usuário não autenticado.' });
@@ -75,6 +76,7 @@ export const updateVendor = async (req: AuthenticatedRequest, res: any) => {
     if (name !== undefined) updateData.name = name;
     if (category !== undefined) updateData.category = category;
     if (phone !== undefined) updateData.phone = phone;
+    if (email !== undefined) updateData.email = email; 
     if (status !== undefined) updateData.status = status;
     if (cost !== undefined) updateData.cost = Number(cost);
 

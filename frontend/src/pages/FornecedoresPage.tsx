@@ -33,6 +33,7 @@ export const FornecedoresPage: React.FC = () => {
         name: newVendor.name,
         category: newVendor.category,
         phone: newVendor.phone,
+        email: newVendor.email, 
         status: newVendor.status,
         cost: Number(newVendor.cost || 0),
       });
@@ -119,7 +120,7 @@ export const FornecedoresPage: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <Mail size={14} className="text-muted-foreground" />
-                    <span>contato@{vendor.name.toLowerCase().replace(/[^a-z0-9]/g, '')}.com</span>
+                    <span>{vendor.email || 'E-mail não informado'}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <MapPin size={14} className="text-muted-foreground" />
