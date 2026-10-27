@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Users, Phone, DollarSign } from 'lucide-react';
+import { X, Users, Phone, Mail, DollarSign } from 'lucide-react';
 import type { Vendor } from '../../types';
 
 interface NewVendorDialogProps {
@@ -12,6 +12,7 @@ export const NewVendorDialog: React.FC<NewVendorDialogProps> = ({ isOpen, onClos
   const [name, setName] = useState('');
   const [category, setCategory] = useState('Espaço & Buffet');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState(''); 
   const [cost, setCost] = useState('');
   const [status, setStatus] = useState<'Contratado' | 'Orçamento' | 'Pesquisando'>('Orçamento');
 
@@ -23,6 +24,7 @@ export const NewVendorDialog: React.FC<NewVendorDialogProps> = ({ isOpen, onClos
       name,
       category,
       phone,
+      email, // 
       cost: parseFloat(cost) || 0,
       status
     });
@@ -111,6 +113,20 @@ export const NewVendorDialog: React.FC<NewVendorDialogProps> = ({ isOpen, onClos
                 <option value="Contratado">Contratado</option>
                 <option value="Pesquisando">Pesquisando</option>
               </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">E-mail</label>
+            <div className="relative">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input 
+                type="email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="contato@fornecedor.com" 
+                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:border-rose-500"
+              />
             </div>
           </div>
 
