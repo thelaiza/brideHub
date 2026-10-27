@@ -54,7 +54,7 @@ export const EditVendorDialog: React.FC<EditVendorDialogProps> = ({ isOpen, onCl
         name,
         category,
         phone,
-        email, // <-- Envia o e-mail para a API
+        email,
         cost: parseFloat(cost) || 0,
         status,
       });
