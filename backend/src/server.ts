@@ -35,8 +35,11 @@ app.get('/api/status', async (req, res) => {
   }
 });
 
-const PORT = process.env.API_PORT || 3333;
+export default app;
 
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  const PORT = process.env.API_PORT || 3333;
+  app.listen(PORT, () => {
+    console.log(`Servidor rodando na porta ${PORT}`);
+  });
+}
