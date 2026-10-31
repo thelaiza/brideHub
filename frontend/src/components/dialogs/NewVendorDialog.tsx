@@ -24,7 +24,7 @@ export const NewVendorDialog: React.FC<NewVendorDialogProps> = ({ isOpen, onClos
       name,
       category,
       phone,
-      email, // 
+      email, 
       cost: parseFloat(cost) || 0,
       status
     });
