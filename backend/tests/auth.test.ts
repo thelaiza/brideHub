@@ -8,6 +8,7 @@ const prisma = new PrismaClient();
 
 describe('Auth API Tests', () => {
   let createdEmail = '';
+  let authToken = '';
 
   beforeAll(() => {
     createdEmail = `authtest_${Date.now()}@bridehub.com`;
@@ -27,7 +28,7 @@ describe('Auth API Tests', () => {
         password: 'securepassword123'
       });
 
-    expect([200, 201]).toContain(response.status);
+    expect(response.status).toBe(201);
     expect(response.body).toHaveProperty('id');
   });
 
@@ -54,6 +55,18 @@ describe('Auth API Tests', () => {
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('token');
+    authToken = response.body.token;
+  });
+
+  it('deve retornar os dados do perfil do usuário autenticado', async () => {
+    const response = await request(app)
+      .get('/api/auth/me')
+      .set('Authorization', `Bearer ${authToken}`);
+
+    expect([200, 404]).toContain(response.status);
+    if (response.status === 200) {
+      expect(response.body).toHaveProperty('email');
+    }
   });
 
   it('deve rejeitar login com senha incorreta', async () => {
