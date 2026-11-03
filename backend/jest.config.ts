@@ -15,6 +15,7 @@ const config: Config = {
       },
     ],
   },
+  setupFiles: ['dotenv/config'],
   clearMocks: true,
 };
 

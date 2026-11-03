@@ -25,10 +25,10 @@
     "tsx": "^4.23.15",
     "typescript": "^5.9.3"
   },
-  "scripts": {
+"scripts": {
     "dev": "tsx watch src/server.ts",
-    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js",
-    "test:coverage": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --coverage"
+    "test": "dotenv -e .env.test -- node --experimental-vm-modules ./node_modules/jest/bin/jest.js",
+    "test:coverage": "dotenv -e .env.test -- node --experimental-vm-modules ./node_modules/jest/bin/jest.js --coverage"
   },
   "name": "backend",
   "version": "1.0.0",
