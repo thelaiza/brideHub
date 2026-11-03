@@ -9,8 +9,12 @@ import dashboardRoutes from './routes/dashboardRoutes.js';
 import weddingRoutes from './routes/weddingRoutes.js';
 
 if (!process.env.JWT_SECRET) {
-  console.error('ERRO CRÍTICO: A variável de ambiente JWT_SECRET não está definida.');
-  process.exit(1);
+  if (process.env.NODE_ENV === 'test') {
+    process.env.JWT_SECRET = 'test_jwt_secret_default_key';
+  } else {
+    console.error('ERRO CRÍTICO: A variável de ambiente JWT_SECRET não está definida.');
+    process.exit(1);
+  }
 }
 
 const prisma = new PrismaClient();

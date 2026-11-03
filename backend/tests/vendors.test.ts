@@ -3,6 +3,7 @@
 import request from 'supertest';
 import { PrismaClient } from '@prisma/client';
 import app from '../src/server.js'; 
+import { createAuthUser } from './helpers/createAuthUser.js';
 
 const prisma = new PrismaClient();
 
@@ -12,30 +13,14 @@ describe('Vendor Management API Tests', () => {
   let vendorId = '';
 
   beforeAll(async () => {
-    const uniqueEmail = `testuser_${Date.now()}@bridehub.com`;
-    
-    const registerResponse = await request(app)
-      .post('/api/auth/register')
-      .send({
-        name: 'Noivos Teste',
-        email: uniqueEmail,
-        password: 'password123',
-      });
-
-    userId = registerResponse.body.id;
-
-    const loginResponse = await request(app)
-      .post('/api/auth/login')
-      .send({
-        email: uniqueEmail,
-        password: 'password123',
-      });
-
-    authToken = loginResponse.body.token;
+    const authData = await createAuthUser();
+    userId = authData.userId;
+    authToken = authData.authToken;
   });
 
   afterAll(async () => {
     if (userId) {
+      await prisma.vendor.deleteMany({ where: { userId } });
       await prisma.user.deleteMany({ where: { id: userId } });
     }
     await prisma.$disconnect();
