@@ -117,7 +117,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div onClick={() => onNavigate?.('financeiro')} className="rounded-3xl border border-border bg-card p-6 shadow-sm hover:shadow-md transition cursor-pointer group">
+        <div 
+          role="button"
+          tabIndex={0}
+          onClick={() => onNavigate?.('financeiro')} 
+          className="rounded-3xl border border-border bg-card p-6 shadow-sm hover:shadow-md transition cursor-pointer group"
+        >
           <div className="flex items-center justify-between">
             <div className="size-10 rounded-2xl bg-rose-50 text-rose-600 grid place-items-center"><Wallet size={20} /></div>
             <ArrowUpRight className="size-4 text-muted-foreground group-hover:text-foreground transition" />
@@ -132,7 +137,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
           </div>
         </div>
 
-        <div onClick={() => onNavigate?.('tarefas')} className="rounded-3xl border border-border bg-card p-6 shadow-sm hover:shadow-md transition cursor-pointer group">
+        <div 
+          role="button"
+          tabIndex={0}
+          onClick={() => onNavigate?.('tarefas')} 
+          className="rounded-3xl border border-border bg-card p-6 shadow-sm hover:shadow-md transition cursor-pointer group"
+        >
           <div className="flex items-center justify-between">
             <div className="size-10 rounded-2xl bg-purple-50 text-purple-600 grid place-items-center"><CheckSquare size={20} /></div>
             <ArrowUpRight className="size-4 text-muted-foreground group-hover:text-foreground transition" />
@@ -147,7 +157,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
           </div>
         </div>
 
-        <div onClick={() => onNavigate?.('fornecedores')} className="rounded-3xl border border-border bg-card p-6 shadow-sm hover:shadow-md transition cursor-pointer group">
+        <div 
+          role="button"
+          tabIndex={0}
+          onClick={() => onNavigate?.('fornecedores')} 
+          className="rounded-3xl border border-border bg-card p-6 shadow-sm hover:shadow-md transition cursor-pointer group"
+        >
           <div className="flex items-center justify-between">
             <div className="size-10 rounded-2xl bg-indigo-50 text-indigo-600 grid place-items-center"><Users size={20} /></div>
             <ArrowUpRight className="size-4 text-muted-foreground group-hover:text-foreground transition" />
@@ -162,7 +177,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
           </div>
         </div>
 
-        <div onClick={() => onNavigate?.('financeiro')} className="rounded-3xl border border-border bg-card p-6 shadow-sm hover:shadow-md transition cursor-pointer group">
+        <div 
+          role="button"
+          tabIndex={0}
+          onClick={() => onNavigate?.('financeiro')} 
+          className="rounded-3xl border border-border bg-card p-6 shadow-sm hover:shadow-md transition cursor-pointer group"
+        >
           <div className="flex items-center justify-between">
             <div className="size-10 rounded-2xl bg-emerald-50 text-emerald-600 grid place-items-center"><TrendingUp size={20} /></div>
             <ArrowUpRight className="size-4 text-muted-foreground group-hover:text-foreground transition" />

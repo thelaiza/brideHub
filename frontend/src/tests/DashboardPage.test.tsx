@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { DashboardPage } from '../pages/DashboardPage'
 import { api } from '../services/api'
 
@@ -37,6 +37,10 @@ describe('DashboardPage Component', () => {
     vi.clearAllMocks()
   })
 
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('deve carregar e exibir os dados do dashboard corretamente', async () => {
     vi.mocked(api.get).mockResolvedValueOnce({ data: mockDashboardData })
 
@@ -56,20 +60,18 @@ describe('DashboardPage Component', () => {
     const welcomeTitle = await screen.findByText('Olá, Laíza')
     expect(welcomeTitle).toBeInTheDocument()
 
-    const financeCard = screen.getByText('Orçamento Comprometido').closest('div[class*="cursor-pointer"]')
-    await user.click(financeCard!)
+    const financeCard = screen.getByRole('button', { name: /orçamento comprometido/i })
+    await user.click(financeCard)
 
     expect(mockOnNavigate).toHaveBeenCalledWith('financeiro')
   })
 
   it('deve lidar com falhas na API de forma segura', async () => {
     vi.mocked(api.get).mockRejectedValueOnce(new Error('Erro de rede'))
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    vi.spyOn(console, 'error').mockImplementation(() => {})
 
     render(<DashboardPage onNavigate={mockOnNavigate} />)
 
     expect(await screen.findByText('Olá, Convidado(a)')).toBeInTheDocument()
-
-    consoleSpy.mockRestore()
   })
 })
