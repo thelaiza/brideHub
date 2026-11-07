@@ -7,7 +7,13 @@ import { OAuth2Client } from 'google-auth-library';
 const router = Router();
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+const GOOGLE_CLIENT_ID = process.env.VITE_GOOGLE_CLIENT_ID;
+if (!GOOGLE_CLIENT_ID) {
+  throw new Error('VITE_GOOGLE_CLIENT_ID não definido no .env');
+}
+
+const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 router.post('/auth/register', async (req, res) => {
   try {
@@ -68,16 +74,15 @@ router.post('/auth/login', async (req, res) => {
 
 router.post('/auth/google', async (req, res) => {
   try {
-    const { token } = req.body; // Aqui agora esperamos o idToken (credential) do GoogleLogin
+    const { token } = req.body as { token?: string };
 
     if (!token) {
       return res.status(400).json({ error: 'Token do Google não fornecido.' });
     }
 
-    // Validação segura do ID Token utilizando o Client ID da nossa aplicação[cite: 2]
     const ticket = await client.verifyIdToken({
       idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID,
+      audience: GOOGLE_CLIENT_ID,
     });
 
     const payload = ticket.getPayload();
@@ -94,7 +99,7 @@ router.post('/auth/google', async (req, res) => {
     if (!user) {
       user = await prisma.user.create({
         data: {
-          name: name || 'Usuário Google', 
+          name: name || 'Usuário Google',
           email,
           password: '',
         },
