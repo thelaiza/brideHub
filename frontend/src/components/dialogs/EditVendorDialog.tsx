@@ -10,28 +10,10 @@ interface EditVendorDialogProps {
   onSave: (updatedVendor: Vendor) => void;
 }
 
-const CATEGORIES = [
-  'Local',
-  'Buffet',
-  'Fotografia e Vídeo',
-  'Bolo',
-  'Doces',
-  'Decoração e Flores',
-  'Papelaria',
-  'Vestido da noiva',
-  'Salão de beleza',
-  'Terno do noivo',
-  'DJ/Banda para festa',
-  'Músicos para cerimônia',
-  'Lembrancinha',
-  'Cerimonial',
-  'Segurança e Serviços Extras',
-  'Outros'
-];
-
 export const EditVendorDialog: React.FC<EditVendorDialogProps> = ({ isOpen, onClose, vendor, onSave }) => {
   const [name, setName] = useState('');
-  const [category, setCategory] = useState(CATEGORIES[0]);
+  const [category, setCategory] = useState('');
+  const [categories, setCategories] = useState<string[]>([]);
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [cost, setCost] = useState('');
@@ -39,9 +21,23 @@ export const EditVendorDialog: React.FC<EditVendorDialogProps> = ({ isOpen, onCl
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (isOpen) {
+      api.get('/api/categories')
+        .then((res) => {
+          const list = res.data || [];
+          setCategories(list);
+          if (list.length > 0 && !category) {
+            setCategory(list[0]);
+          }
+        })
+        .catch((err) => console.error('Erro ao carregar categorias:', err));
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
     if (vendor) {
       setName(vendor.name || '');
-      setCategory(vendor.category || CATEGORIES[0]);
+      setCategory(vendor.category || '');
       setPhone(vendor.phone || '');
       setEmail(vendor.email || ''); 
       setCost(vendor.cost !== undefined ? vendor.cost.toString() : '');
@@ -109,7 +105,7 @@ export const EditVendorDialog: React.FC<EditVendorDialogProps> = ({ isOpen, onCl
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full pl-11 pr-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring text-foreground cursor-pointer"
               >
-                {CATEGORIES.map((cat) => (
+                {categories.map((cat) => (
                   <option key={cat} value={cat} className="bg-card text-foreground">{cat}</option>
                 ))}
               </select>

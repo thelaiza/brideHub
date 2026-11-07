@@ -5,25 +5,6 @@ import { EditExpenseDialog } from '../components/dialogs/EditExpenseDialog';
 import type { Expense } from '../types';
 import { api } from '../services/api';
 
-const CATEGORIES = [
-  'Local',
-  'Buffet',
-  'Fotografia e Vídeo',
-  'Bolo',
-  'Doces',
-  'Decoração e Flores',
-  'Papelaria',
-  'Vestido da noiva',
-  'Salão de beleza',
-  'Terno do noivo',
-  'DJ/Banda para festa',
-  'Músicos para cerimônia',
-  'Lembrancinha',
-  'Cerimonial',
-  'Segurança e Serviços Extras',
-  'Outros'
-];
-
 const toUiStatus = (apiStatus?: string): 'Pendente' | 'Pago' => {
   return apiStatus === 'paid' ? 'Pago' : 'Pendente';
 };
@@ -36,9 +17,19 @@ export const FinanceiroPage: React.FC = () => {
   const [isExpenseOpen, setIsExpenseOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
+  const [categories, setCategories] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await api.get('/api/categories');
+      setCategories(response.data || []);
+    } catch (error) {
+      console.error('Erro ao carregar categorias:', error);
+    }
+  };
 
   const fetchExpenses = async () => {
     try {
@@ -56,6 +47,7 @@ export const FinanceiroPage: React.FC = () => {
   };
 
   useEffect(() => {
+    fetchCategories();
     fetchExpenses();
   }, []);
 
@@ -153,9 +145,9 @@ export const FinanceiroPage: React.FC = () => {
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="px-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm font-medium text-foreground focus:outline-none focus:border-ring cursor-pointer"
             >
-              <option value="Todas">Todas as categorias</option>
-              {CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>{cat}</option>
+              <option value="Todas" className="bg-card text-foreground">Todas as categorias</option>
+              {categories.map((cat) => (
+                <option key={cat} value={cat} className="bg-card text-foreground">{cat}</option>
               ))}
             </select>
             {selectedCategory !== 'Todas' && (

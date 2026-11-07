@@ -10,26 +10,34 @@ interface EditTaskDialogProps {
   onSave: (updatedTask: Task) => void;
 }
 
-const CATEGORIES = [
-  'Local', 'Buffet', 'Fotografia e Vídeo', 'Bolo', 'Doces', 
-  'Decoração e Flores', 'Papelaria', 'Vestido da noiva', 'Salão de beleza', 
-  'Terno do noivo', 'DJ/Banda para festa', 'Músicos para cerimônia', 
-  'Lembrancinha', 'Cerimonial', 'Segurança e Serviços Extras', 'Outros'
-];
-
 export const EditTaskDialog: React.FC<EditTaskDialogProps> = ({ isOpen, task, onClose, onSave }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState(CATEGORIES[0]);
+  const [category, setCategory] = useState('');
+  const [categories, setCategories] = useState<string[]>([]);
   const [dueDate, setDueDate] = useState('');
   const [status, setStatus] = useState<'todo' | 'doing' | 'done'>('todo');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (isOpen) {
+      api.get('/api/categories')
+        .then((res) => {
+          const list = res.data || [];
+          setCategories(list);
+          if (list.length > 0 && !category) {
+            setCategory(list[0]);
+          }
+        })
+        .catch((err) => console.error('Erro ao carregar categorias:', err));
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
     if (task) {
       setTitle(task.title || '');
       setDescription(task.description || '');
-      setCategory(task.category || CATEGORIES[0]);
+      setCategory(task.category || '');
       setDueDate(task.dueDate ? task.dueDate.split('T')[0] : '');
       setStatus(task.status || 'todo');
     }
@@ -104,7 +112,7 @@ export const EditTaskDialog: React.FC<EditTaskDialogProps> = ({ isOpen, task, on
                   onChange={(e) => setCategory(e.target.value)}
                   className="w-full pl-11 pr-4 py-3 bg-muted/50 border border-border rounded-2xl text-sm text-foreground focus:outline-none focus:border-ring appearance-none cursor-pointer"
                 >
-                  {CATEGORIES.map((cat) => (
+                  {categories.map((cat) => (
                     <option key={cat} value={cat} className="bg-card text-foreground">{cat}</option>
                   ))}
                 </select>
@@ -118,7 +126,7 @@ export const EditTaskDialog: React.FC<EditTaskDialogProps> = ({ isOpen, task, on
                 onChange={(e) => setStatus(e.target.value as 'todo' | 'doing' | 'done')}
                 className="w-full px-4 py-3 bg-muted/50 border border-border rounded-2xl text-sm text-foreground focus:outline-none focus:border-ring cursor-pointer"
               >
-                <option value="todo" className="bg-card text-foreground">A Fazer</option>
+                <option value="todo" className="bg-card text-foreground">Pendentes</option>
                 <option value="doing" className="bg-card text-foreground">Em Andamento</option>
                 <option value="done" className="bg-card text-foreground">Concluído</option>
               </select>

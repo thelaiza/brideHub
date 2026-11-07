@@ -10,26 +10,6 @@ interface EditExpenseDialogProps {
   onSave: (updatedExpense: Expense) => void;
 }
 
-const CATEGORIES = [
-  'Local',
-  'Buffet',
-  'Fotografia e Vídeo',
-  'Bolo',
-  'Doces',
-  'Decoração e Flores',
-  'Papelaria',
-  'Vestido da noiva',
-  'Salão de beleza',
-  'Terno do noivo',
-  'DJ/Banda para festa',
-  'Músicos para cerimônia',
-  'Lembrancinha',
-  'Cerimonial',
-  'Segurança e Serviços Extras',
-  'Outros'
-];
-
-// Funções de mapeamento para unificar o formato API (inglês) e UI (português)
 const toUiStatus = (apiStatus?: string): 'Pendente' | 'Pago' => {
   return apiStatus === 'paid' ? 'Pago' : 'Pendente';
 };
@@ -40,16 +20,31 @@ const toApiStatus = (uiStatus: 'Pendente' | 'Pago'): 'pending' | 'paid' => {
 
 export const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({ isOpen, onClose, expense, onSave }) => {
   const [title, setTitle] = useState('');
-  const [category, setCategory] = useState(CATEGORIES[0]);
+  const [category, setCategory] = useState('');
+  const [categories, setCategories] = useState<string[]>([]);
   const [amount, setAmount] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [status, setStatus] = useState<'Pendente' | 'Pago'>('Pendente');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (isOpen) {
+      api.get('/api/categories')
+        .then((res) => {
+          const list = res.data || [];
+          setCategories(list);
+          if (list.length > 0 && !category) {
+            setCategory(list[0]);
+          }
+        })
+        .catch((err) => console.error('Erro ao carregar categorias:', err));
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
     if (expense) {
       setTitle(expense.title || '');
-      setCategory(expense.category || CATEGORIES[0]);
+      setCategory(expense.category || '');
       setAmount(expense.amount ? expense.amount.toString() : '');
       setDueDate(expense.dueDate ? expense.dueDate.split('T')[0] : '');
       setStatus(toUiStatus(expense.status)); 
@@ -115,8 +110,8 @@ export const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({ isOpen, on
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full pl-11 pr-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring text-foreground cursor-pointer"
               >
-                {CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat} className="bg-card text-foreground">{cat}</option>
                 ))}
               </select>
             </div>
@@ -159,8 +154,8 @@ export const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({ isOpen, on
               onChange={(e) => setStatus(e.target.value as 'Pendente' | 'Pago')}
               className="w-full px-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring text-foreground cursor-pointer"
             >
-              <option value="Pendente">Pendente</option>
-              <option value="Pago">Pago</option>
+              <option value="Pendente" className="bg-card text-foreground">Pendente</option>
+              <option value="Pago" className="bg-card text-foreground">Pago</option>
             </select>
           </div>
 

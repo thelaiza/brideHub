@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Users, Tag, Phone, Mail, DollarSign } from 'lucide-react';
+import { api } from '../../services/api';
 import type { Vendor } from '../../types';
 
 interface NewVendorDialogProps {
@@ -8,32 +9,29 @@ interface NewVendorDialogProps {
   onSave: (vendor: Omit<Vendor, 'id'>) => void;
 }
 
-const CATEGORIES = [
-  'Local',
-  'Buffet',
-  'Fotografia e Vídeo',
-  'Bolo',
-  'Doces',
-  'Decoração e Flores',
-  'Papelaria',
-  'Vestido da noiva',
-  'Salão de beleza',
-  'Terno do noivo',
-  'DJ/Banda para festa',
-  'Músicos para cerimônia',
-  'Lembrancinha',
-  'Cerimonial',
-  'Segurança e Serviços Extras',
-  'Outros'
-];
-
 export const NewVendorDialog: React.FC<NewVendorDialogProps> = ({ isOpen, onClose, onSave }) => {
   const [name, setName] = useState('');
-  const [category, setCategory] = useState(CATEGORIES[0]);
+  const [category, setCategory] = useState('');
+  const [categories, setCategories] = useState<string[]>([]);
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState(''); 
   const [cost, setCost] = useState('');
   const [status, setStatus] = useState<'Contratado' | 'Orçamento' | 'Pesquisando'>('Orçamento');
+
+  // Busca as categorias centralizadas da API ao abrir o modal
+  useEffect(() => {
+    if (isOpen) {
+      api.get('/api/categories')
+        .then((res) => {
+          const list = res.data || [];
+          setCategories(list);
+          if (list.length > 0 && !category) {
+            setCategory(list[0]);
+          }
+        })
+        .catch((err) => console.error('Erro ao carregar categorias:', err));
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -86,7 +84,7 @@ export const NewVendorDialog: React.FC<NewVendorDialogProps> = ({ isOpen, onClos
                   onChange={(e) => setCategory(e.target.value)}
                   className="w-full pl-11 pr-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring text-foreground cursor-pointer appearance-none"
                 >
-                  {CATEGORIES.map((cat) => (
+                  {categories.map((cat) => (
                     <option key={cat} value={cat} className="bg-card text-foreground">{cat}</option>
                   ))}
                 </select>

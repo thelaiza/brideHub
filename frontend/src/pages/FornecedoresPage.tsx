@@ -5,32 +5,24 @@ import { EditVendorDialog } from '../components/dialogs/EditVendorDialog';
 import type { Vendor } from '../types';
 import { api } from '../services/api';
 
-const CATEGORIES = [
-  'Local',
-  'Buffet',
-  'Fotografia e Vídeo',
-  'Bolo',
-  'Doces',
-  'Decoração e Flores',
-  'Papelaria',
-  'Vestido da noiva',
-  'Salão de beleza',
-  'Terno do noivo',
-  'DJ/Banda para festa',
-  'Músicos para cerimônia',
-  'Lembrancinha',
-  'Cerimonial',
-  'Segurança e Serviços Extras',
-  'Outros'
-];
-
 export const FornecedoresPage: React.FC = () => {
   const [isVendorOpen, setIsVendorOpen] = useState(false);
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todas');
+  const [categories, setCategories] = useState<string[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Busca as categorias centralizadas da API
+  const fetchCategories = async () => {
+    try {
+      const response = await api.get('/api/categories');
+      setCategories(response.data || []);
+    } catch (error) {
+      console.error('Erro ao carregar categorias:', error);
+    }
+  };
 
   const fetchVendors = async () => {
     try {
@@ -44,6 +36,7 @@ export const FornecedoresPage: React.FC = () => {
   };
 
   useEffect(() => {
+    fetchCategories();
     fetchVendors();
   }, []);
 
@@ -123,7 +116,7 @@ export const FornecedoresPage: React.FC = () => {
             className="w-full pl-11 pr-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring transition-colors text-foreground appearance-none cursor-pointer"
           >
             <option value="Todas" className="bg-card text-foreground">Todas as Categorias</option>
-            {CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <option key={cat} value={cat} className="bg-card text-foreground">
                 {cat}
               </option>

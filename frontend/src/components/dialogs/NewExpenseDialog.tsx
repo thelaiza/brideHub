@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, DollarSign, Calendar, Tag, FileText } from 'lucide-react';
+import { api } from '../../services/api';
 import type { Expense } from '../../types';
 
 interface NewExpenseDialogProps {
@@ -8,31 +9,27 @@ interface NewExpenseDialogProps {
   onSave: (expense: Omit<Expense, 'id'>) => void;
 }
 
-const CATEGORIES = [
-  'Local',
-  'Buffet',
-  'Fotografia e Vídeo',
-  'Bolo',
-  'Doces',
-  'Decoração e Flores',
-  'Papelaria',
-  'Vestido da noiva',
-  'Salão de beleza',
-  'Terno do noivo',
-  'DJ/Banda para festa',
-  'Músicos para cerimônia',
-  'Lembrancinha',
-  'Cerimonial',
-  'Segurança e Serviços Extras',
-  'Outros'
-];
-
 export const NewExpenseDialog: React.FC<NewExpenseDialogProps> = ({ isOpen, onClose, onSave }) => {
   const [title, setTitle] = useState('');
-  const [category, setCategory] = useState(CATEGORIES[0]);
+  const [category, setCategory] = useState('');
+  const [categories, setCategories] = useState<string[]>([]);
   const [amount, setAmount] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [status, setStatus] = useState<'Pendente' | 'Pago'>('Pendente');
+
+  useEffect(() => {
+    if (isOpen) {
+      api.get('/api/categories')
+        .then((res) => {
+          const list = res.data || [];
+          setCategories(list);
+          if (list.length > 0 && !category) {
+            setCategory(list[0]);
+          }
+        })
+        .catch((err) => console.error('Erro ao carregar categorias:', err));
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -84,7 +81,7 @@ export const NewExpenseDialog: React.FC<NewExpenseDialogProps> = ({ isOpen, onCl
                   onChange={(e) => setCategory(e.target.value)}
                   className="w-full pl-11 pr-4 py-3 bg-muted/50 border border-border rounded-2xl text-sm text-foreground focus:outline-none focus:border-ring appearance-none cursor-pointer"
                 >
-                  {CATEGORIES.map((cat) => (
+                  {categories.map((cat) => (
                     <option key={cat} value={cat} className="bg-card text-foreground">{cat}</option>
                   ))}
                 </select>

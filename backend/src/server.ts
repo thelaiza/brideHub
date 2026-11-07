@@ -7,6 +7,7 @@ import taskRoutes from './routes/taskRoutes.js';
 import vendorRoutes from './routes/vendorRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import weddingRoutes from './routes/weddingRoutes.js';
+import categoryRoutes from './routes/categoryRoutes.js';
 
 if (!process.env.JWT_SECRET) {
   if (process.env.NODE_ENV === 'test') {
@@ -29,6 +30,7 @@ app.use('/api', taskRoutes);
 app.use('/api', vendorRoutes);
 app.use('/api', dashboardRoutes);
 app.use('/api', weddingRoutes);
+app.use('/api', categoryRoutes);
 
 app.get('/api/status', async (req, res) => {
   try {
