@@ -96,6 +96,12 @@ export const TarefasPage: React.FC = () => {
   const renderTaskCard = (task: Task) => {
     const isMenuOpen = activeMenuId === task.id;
 
+    const statusColorClass = task.status === 'done' 
+      ? 'text-emerald-600 font-medium' 
+      : task.status === 'doing' 
+      ? 'text-blue-600 font-medium' 
+      : 'text-amber-600 font-medium';
+
     return (
       <div 
         key={task.id} 
@@ -153,8 +159,8 @@ export const TarefasPage: React.FC = () => {
 
         <div className="flex justify-between items-center text-xs text-muted-foreground pt-2 border-t border-border">
           <span>Vencimento: {task.dueDate ? new Date(task.dueDate.split('T')[0] + 'T00:00:00').toLocaleDateString('pt-BR') : 'Sem data'}</span>
-          <span className={task.status === 'done' ? 'text-emerald-600 font-medium' : 'text-amber-600 font-medium'}>
-            {task.status === 'done' ? 'Feito' : task.status === 'doing' ? 'Em andamento' : 'Pendente'}
+          <span className={statusColorClass}>
+            {task.status === 'done' ? 'Concluído' : task.status === 'doing' ? 'Em andamento' : 'Pendente'}
           </span>
         </div>
       </div>
