@@ -5,25 +5,6 @@ import { EditExpenseDialog } from '../components/dialogs/EditExpenseDialog';
 import type { Expense } from '../types';
 import { api } from '../services/api';
 
-const CATEGORIES = [
-  'Local',
-  'Buffet',
-  'Fotografia e Vídeo',
-  'Bolo',
-  'Doces',
-  'Decoração e Flores',
-  'Papelaria',
-  'Vestido da noiva',
-  'Salão de beleza',
-  'Terno do noivo',
-  'DJ/Banda para festa',
-  'Músicos para cerimônia',
-  'Lembrancinha',
-  'Cerimonial',
-  'Segurança e Serviços Extras',
-  'Outros'
-];
-
 const toUiStatus = (apiStatus?: string): 'Pendente' | 'Pago' => {
   return apiStatus === 'paid' ? 'Pago' : 'Pendente';
 };
@@ -36,9 +17,19 @@ export const FinanceiroPage: React.FC = () => {
   const [isExpenseOpen, setIsExpenseOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
+  const [categories, setCategories] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await api.get('/api/categories');
+      setCategories(response.data || []);
+    } catch (error) {
+      console.error('Erro ao carregar categorias:', error);
+    }
+  };
 
   const fetchExpenses = async () => {
     try {
@@ -56,6 +47,7 @@ export const FinanceiroPage: React.FC = () => {
   };
 
   useEffect(() => {
+    fetchCategories();
     fetchExpenses();
   }, []);
 
@@ -133,8 +125,8 @@ export const FinanceiroPage: React.FC = () => {
         </button>
       </div>
 
-      <div className="bg-card p-4 rounded-3xl border border-border shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
-        <div className="relative w-full md:w-96">
+      <div className="bg-card p-4 rounded-3xl border border-border shadow-sm flex flex-col md:flex-row items-center gap-4">
+        <div className="relative w-full">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
           <input 
             type="text" 
@@ -145,30 +137,31 @@ export const FinanceiroPage: React.FC = () => {
           />
         </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto justify-end flex-wrap">
-          <div className="relative flex items-center gap-2">
-            <Filter size={16} className="text-muted-foreground" />
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm font-medium text-foreground focus:outline-none focus:border-ring cursor-pointer"
-            >
-              <option value="Todas">Todas as categorias</option>
-              {CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-            {selectedCategory !== 'Todas' && (
-              <button 
-                onClick={() => setSelectedCategory('Todas')}
-                className="text-xs text-muted-foreground hover:text-foreground p-1 cursor-pointer"
-                title="Limpar filtro"
-              >
-                <X size={16} />
-              </button>
-            )}
-          </div>
+        <div className="relative w-full md:w-72">
+          <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="w-full pl-11 pr-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring transition-colors text-foreground appearance-none cursor-pointer"
+          >
+            <option value="Todas" className="bg-card text-foreground">Todas as Categorias</option>
+            {categories.map((cat) => (
+              <option key={cat} value={cat} className="bg-card text-foreground">
+                {cat}
+              </option>
+            ))}
+          </select>
         </div>
+
+        {selectedCategory !== 'Todas' && (
+          <button 
+            onClick={() => setSelectedCategory('Todas')}
+            className="text-xs text-muted-foreground hover:text-foreground p-2 cursor-pointer flex items-center gap-1"
+            title="Limpar filtro"
+          >
+            <X size={16} /> Limpar
+          </button>
+        )}
       </div>
 
       <div className="bg-card rounded-3xl border border-border shadow-sm overflow-hidden">
