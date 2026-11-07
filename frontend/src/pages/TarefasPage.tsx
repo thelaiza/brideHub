@@ -67,11 +67,44 @@ export const TarefasPage: React.FC = () => {
     }
   };
 
+  const handleDropTask = async (targetStatus: 'todo' | 'doing' | 'done', e: React.DragEvent) => {
+    e.preventDefault();
+    const taskId = e.dataTransfer.getData('text/plain');
+    if (!taskId) return;
+
+    const task = tasks.find(t => t.id === taskId);
+    if (!task || task.status === targetStatus) return;
+
+    const isCompleted = targetStatus === 'done';
+
+    const updatedTasks = tasks.map(t => 
+      t.id === taskId ? { ...t, status: targetStatus, completed: isCompleted } : t
+    );
+    setTasks(updatedTasks);
+
+    try {
+      await api.patch(`/api/tasks/${taskId}`, {
+        status: targetStatus,
+        completed: isCompleted,
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar status da tarefa:', error);
+      fetchTasks();
+    }
+  };
+
   const renderTaskCard = (task: Task) => {
     const isMenuOpen = activeMenuId === task.id;
 
     return (
-      <div key={task.id} className="bg-card p-4 rounded-2xl border border-border shadow-sm space-y-2 relative hover:border-ring transition-colors">
+      <div 
+        key={task.id} 
+        draggable
+        onDragStart={(e) => {
+          e.dataTransfer.setData('text/plain', task.id);
+        }}
+        className="bg-card p-4 rounded-2xl border border-border shadow-sm space-y-2 relative hover:border-ring transition-colors cursor-grab active:cursor-grabbing"
+      >
         <div className="flex justify-between items-start">
           <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary uppercase tracking-wider">
             {task.category || 'Geral'}
@@ -147,11 +180,15 @@ export const TarefasPage: React.FC = () => {
         <div className="py-12 text-center text-muted-foreground">Carregando tarefas...</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-          <div className="bg-muted/70 p-4 rounded-3xl border border-border space-y-4">
+          <div 
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => handleDropTask('todo', e)}
+            className="bg-muted/70 p-4 rounded-3xl border border-border space-y-4 min-h-[350px]"
+          >
             <div className="flex items-center justify-between px-2">
               <div className="flex items-center gap-2">
                 <Clock size={18} className="text-amber-500" />
-                <h4 className="font-bold text-foreground text-sm">A Fazer</h4>
+                <h4 className="font-bold text-foreground text-sm">Pendentes</h4>
               </div>
               <span className="w-6 h-6 rounded-full bg-muted text-foreground flex items-center justify-center text-xs font-bold">
                 {tasks.filter(t => t.status === 'todo').length}
@@ -159,14 +196,18 @@ export const TarefasPage: React.FC = () => {
             </div>
             <div className="space-y-3">
               {tasks.filter(t => t.status === 'todo').length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-4">Nenhuma tarefa a fazer.</p>
+                <p className="text-xs text-muted-foreground text-center py-4">Nenhuma tarefa pendente.</p>
               ) : (
                 tasks.filter(t => t.status === 'todo').map(renderTaskCard)
               )}
             </div>
           </div>
 
-          <div className="bg-muted/70 p-4 rounded-3xl border border-border space-y-4">
+          <div 
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => handleDropTask('doing', e)}
+            className="bg-muted/70 p-4 rounded-3xl border border-border space-y-4 min-h-[350px]"
+          >
             <div className="flex items-center justify-between px-2">
               <div className="flex items-center gap-2">
                 <AlertCircle size={18} className="text-rose-500" />
@@ -185,7 +226,11 @@ export const TarefasPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-muted/70 p-4 rounded-3xl border border-border space-y-4">
+          <div 
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => handleDropTask('done', e)}
+            className="bg-muted/70 p-4 rounded-3xl border border-border space-y-4 min-h-[350px]"
+          >
             <div className="flex items-center justify-between px-2">
               <div className="flex items-center gap-2">
                 <CheckSquare size={18} className="text-emerald-500" />

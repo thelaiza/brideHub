@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { render, screen, waitFor, within, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { TarefasPage } from '../pages/TarefasPage'
@@ -8,6 +8,7 @@ vi.mock('../services/api', () => ({
   api: {
     get: vi.fn(),
     post: vi.fn(),
+    patch: vi.fn(),
     delete: vi.fn(),
   },
 }))
@@ -53,6 +54,34 @@ describe('TarefasPage Component', () => {
     await waitFor(() => {
       expect(api.delete).toHaveBeenCalledWith('/api/tasks/1')
       expect(screen.queryByText('Reservar Igreja')).not.toBeInTheDocument()
+    })
+  })
+
+  it('deve permitir arrastar e soltar uma tarefa para outra coluna e atualizar o status via API', async () => {
+    vi.mocked(api.get).mockResolvedValueOnce({ data: mockTasks })
+    vi.mocked(api.patch).mockResolvedValueOnce({ data: { ...mockTasks[0], status: 'doing' } })
+
+    render(<TarefasPage />)
+
+    expect(await screen.findByText('Reservar Igreja')).toBeInTheDocument()
+
+    const taskCard = screen.getByText('Reservar Igreja').closest<HTMLElement>('div.bg-card')
+    const doingColumn = screen.getByText('Em Andamento').closest<HTMLElement>('div.bg-muted\\/70')
+
+    const dataTransfer = {
+      setData: vi.fn(),
+      getData: vi.fn().mockReturnValue('1'),
+    }
+
+    fireEvent.dragStart(taskCard!, { dataTransfer })
+    fireEvent.dragOver(doingColumn!)
+    fireEvent.drop(doingColumn!, { dataTransfer })
+
+    await waitFor(() => {
+      expect(api.patch).toHaveBeenCalledWith('/api/tasks/1', {
+        status: 'doing',
+        completed: false,
+      })
     })
   })
 })

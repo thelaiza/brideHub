@@ -79,14 +79,21 @@ export const updateTask = async (req: AuthenticatedRequest, res: any) => {
     if (title !== undefined) updateData.title = title;
     if (description !== undefined) updateData.description = description;
     if (category !== undefined) updateData.category = category;
+
     if (status !== undefined) {
       updateData.status = status;
-      updateData.completed = status === 'done';
+      if (completed === undefined) {
+        updateData.completed = status === 'done';
+      }
     }
+
     if (completed !== undefined) {
       updateData.completed = Boolean(completed);
-      updateData.status = completed ? 'done' : 'todo';
+      if (status === undefined) {
+        updateData.status = completed ? 'done' : 'todo';
+      }
     }
+
     if (dueDate !== undefined) {
       updateData.dueDate = dueDate ? new Date(dueDate) : null;
     }
