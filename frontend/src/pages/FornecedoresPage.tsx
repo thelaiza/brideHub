@@ -1,14 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Phone, Mail, MapPin, CheckCircle2, Clock, Trash2, Pencil } from 'lucide-react';
+import { Plus, Search, Phone, Mail, MapPin, CheckCircle2, Clock, Trash2, Pencil, Filter } from 'lucide-react';
 import { NewVendorDialog } from '../components/dialogs/NewVendorDialog';
 import { EditVendorDialog } from '../components/dialogs/EditVendorDialog';
 import type { Vendor } from '../types';
 import { api } from '../services/api';
 
+const CATEGORIES = [
+  'Local',
+  'Buffet',
+  'Fotografia e Vídeo',
+  'Bolo',
+  'Doces',
+  'Decoração e Flores',
+  'Papelaria',
+  'Vestido da noiva',
+  'Salão de beleza',
+  'Terno do noivo',
+  'DJ/Banda para festa',
+  'Músicos para cerimônia',
+  'Lembrancinha',
+  'Cerimonial',
+  'Segurança e Serviços Extras',
+  'Outros'
+];
+
 export const FornecedoresPage: React.FC = () => {
   const [isVendorOpen, setIsVendorOpen] = useState(false);
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('Todas');
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -60,8 +80,12 @@ export const FornecedoresPage: React.FC = () => {
   };
 
   const filteredVendors = vendors.filter((vendor) => {
-    return vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           vendor.category.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          vendor.category.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesCategory = selectedCategory === 'Todas' || vendor.category === selectedCategory;
+
+    return matchesSearch && matchesCategory;
   });
 
   return (
@@ -79,7 +103,7 @@ export const FornecedoresPage: React.FC = () => {
         </button>
       </div>
 
-      <div className="bg-card p-4 rounded-3xl border border-border shadow-sm flex items-center gap-4">
+      <div className="bg-card p-4 rounded-3xl border border-border shadow-sm flex flex-col md:flex-row items-center gap-4">
         <div className="relative w-full">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
           <input 
@@ -89,6 +113,22 @@ export const FornecedoresPage: React.FC = () => {
             placeholder="Buscar por nome do fornecedor ou categoria (ex: Buffet, Fotógrafo)..." 
             className="w-full pl-11 pr-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring transition-colors text-foreground"
           />
+        </div>
+
+        <div className="relative w-full md:w-72">
+          <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="w-full pl-11 pr-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring transition-colors text-foreground appearance-none cursor-pointer"
+          >
+            <option value="Todas" className="bg-card text-foreground">Todas as Categorias</option>
+            {CATEGORIES.map((cat) => (
+              <option key={cat} value={cat} className="bg-card text-foreground">
+                {cat}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 

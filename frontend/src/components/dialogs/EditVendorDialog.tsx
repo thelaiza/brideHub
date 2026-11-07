@@ -14,11 +14,18 @@ const CATEGORIES = [
   'Local',
   'Buffet',
   'Fotografia e Vídeo',
-  'Bolo e Doces',
+  'Bolo',
+  'Doces',
   'Decoração e Flores',
-  'Música e Animação',
-  'Vestido e Beleza',
+  'Papelaria',
+  'Vestido da noiva',
+  'Salão de beleza',
+  'Terno do noivo',
+  'DJ/Banda para festa',
+  'Músicos para cerimônia',
+  'Lembrancinha',
   'Cerimonial',
+  'Segurança e Serviços Extras',
   'Outros'
 ];
 
@@ -103,7 +110,7 @@ export const EditVendorDialog: React.FC<EditVendorDialogProps> = ({ isOpen, onCl
                 className="w-full pl-11 pr-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring text-foreground cursor-pointer"
               >
                 {CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
+                  <option key={cat} value={cat} className="bg-card text-foreground">{cat}</option>
                 ))}
               </select>
             </div>
@@ -159,9 +166,9 @@ export const EditVendorDialog: React.FC<EditVendorDialogProps> = ({ isOpen, onCl
               onChange={(e) => setStatus(e.target.value as any)}
               className="w-full px-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring text-foreground cursor-pointer"
             >
-              <option value="Pesquisando">Pesquisando</option>
-              <option value="Orçamento">Orçamento</option>
-              <option value="Contratado">Contratado</option>
+              <option value="Pesquisando" className="bg-card text-foreground">Pesquisando</option>
+              <option value="Orçamento" className="bg-card text-foreground">Orçamento</option>
+              <option value="Contratado" className="bg-card text-foreground">Contratado</option>
             </select>
           </div>
 
