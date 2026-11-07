@@ -83,6 +83,7 @@ export const TarefasPage: React.FC = () => {
                 e.stopPropagation();
                 setActiveMenuId(isMenuOpen ? null : task.id);
               }}
+              aria-label="Ações da tarefa"
               className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
             >
               <MoreVertical size={16} />
