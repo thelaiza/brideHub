@@ -125,8 +125,8 @@ export const FinanceiroPage: React.FC = () => {
         </button>
       </div>
 
-      <div className="bg-card p-4 rounded-3xl border border-border shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
-        <div className="relative w-full md:w-96">
+      <div className="bg-card p-4 rounded-3xl border border-border shadow-sm flex flex-col md:flex-row items-center gap-4">
+        <div className="relative w-full">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
           <input 
             type="text" 
@@ -137,30 +137,31 @@ export const FinanceiroPage: React.FC = () => {
           />
         </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto justify-end flex-wrap">
-          <div className="relative flex items-center gap-2">
-            <Filter size={16} className="text-muted-foreground" />
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm font-medium text-foreground focus:outline-none focus:border-ring cursor-pointer"
-            >
-              <option value="Todas" className="bg-card text-foreground">Todas as categorias</option>
-              {categories.map((cat) => (
-                <option key={cat} value={cat} className="bg-card text-foreground">{cat}</option>
-              ))}
-            </select>
-            {selectedCategory !== 'Todas' && (
-              <button 
-                onClick={() => setSelectedCategory('Todas')}
-                className="text-xs text-muted-foreground hover:text-foreground p-1 cursor-pointer"
-                title="Limpar filtro"
-              >
-                <X size={16} />
-              </button>
-            )}
-          </div>
+        <div className="relative w-full md:w-72">
+          <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="w-full pl-11 pr-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring transition-colors text-foreground appearance-none cursor-pointer"
+          >
+            <option value="Todas" className="bg-card text-foreground">Todas as Categorias</option>
+            {categories.map((cat) => (
+              <option key={cat} value={cat} className="bg-card text-foreground">
+                {cat}
+              </option>
+            ))}
+          </select>
         </div>
+
+        {selectedCategory !== 'Todas' && (
+          <button 
+            onClick={() => setSelectedCategory('Todas')}
+            className="text-xs text-muted-foreground hover:text-foreground p-2 cursor-pointer flex items-center gap-1"
+            title="Limpar filtro"
+          >
+            <X size={16} /> Limpar
+          </button>
+        )}
       </div>
 
       <div className="bg-card rounded-3xl border border-border shadow-sm overflow-hidden">
