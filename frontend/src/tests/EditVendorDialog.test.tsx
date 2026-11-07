@@ -7,6 +7,7 @@ import type { Vendor } from '../types'
 
 vi.mock('../services/api', () => ({
   api: {
+    get: vi.fn(),
     patch: vi.fn(),
   },
 }))
@@ -22,11 +23,14 @@ describe('EditVendorDialog Component', () => {
     status: 'Contratado',
   }
 
+  const mockCategories = ['Buffet', 'Fotografia e Vídeo']
+
   const mockOnClose = vi.fn()
   const mockOnSave = vi.fn()
 
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(api.get).mockResolvedValue({ data: mockCategories })
   })
 
   it('não deve renderizar nada quando isOpen for falso', () => {
@@ -40,9 +44,10 @@ describe('EditVendorDialog Component', () => {
     )
 
     expect(screen.queryByText('Editar Fornecedor')).not.toBeInTheDocument()
+    expect(api.get).not.toHaveBeenCalled()
   })
 
-  it('deve preencher os campos com os dados do fornecedor quando isOpen for verdadeiro', () => {
+  it('deve preencher os campos com os dados do fornecedor quando isOpen for verdadeiro', async () => {
     render(
       <EditVendorDialog 
         isOpen={true} 
@@ -57,6 +62,9 @@ describe('EditVendorDialog Component', () => {
     expect(screen.getByDisplayValue('47999999999')).toBeInTheDocument()
     expect(screen.getByDisplayValue('contato@buffetmaster.com')).toBeInTheDocument()
     expect(screen.getByDisplayValue('12000')).toBeInTheDocument()
+
+    await screen.findByRole('option', { name: 'Fotografia e Vídeo' })
+    expect(screen.getByLabelText('Categoria')).toHaveValue('Buffet')
   })
 
   it('deve chamar onClose ao clicar no botão de cancelar', async () => {
@@ -71,8 +79,9 @@ describe('EditVendorDialog Component', () => {
       />
     )
 
-    const cancelButton = screen.getByRole('button', { name: /cancelar/i })
-    await user.click(cancelButton)
+    await screen.findByRole('option', { name: 'Fotografia e Vídeo' })
+
+    await user.click(screen.getByRole('button', { name: /cancelar/i }))
 
     expect(mockOnClose).toHaveBeenCalledTimes(1)
   })
@@ -91,12 +100,13 @@ describe('EditVendorDialog Component', () => {
       />
     )
 
+    await screen.findByRole('option', { name: 'Fotografia e Vídeo' })
+
     const nameInput = screen.getByDisplayValue('Buffet Master')
     await user.clear(nameInput)
     await user.type(nameInput, 'Buffet Master Premium')
 
-    const submitButton = screen.getByRole('button', { name: /salvar alterações/i })
-    await user.click(submitButton)
+    await user.click(screen.getByRole('button', { name: /salvar alterações/i }))
 
     await waitFor(() => {
       expect(api.patch).toHaveBeenCalledTimes(1)

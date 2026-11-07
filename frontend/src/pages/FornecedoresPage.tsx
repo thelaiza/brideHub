@@ -14,7 +14,6 @@ export const FornecedoresPage: React.FC = () => {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Busca as categorias centralizadas da API
   const fetchCategories = async () => {
     try {
       const response = await api.get('/api/categories');

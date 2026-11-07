@@ -7,6 +7,7 @@ import type { Task } from '../types'
 
 vi.mock('../services/api', () => ({
   api: {
+    get: vi.fn(),
     patch: vi.fn(),
   },
 }))
@@ -21,14 +22,17 @@ describe('EditTaskDialog Component', () => {
     status: 'todo',
   }
 
+  const mockCategories = ['Local', 'Buffet']
+
   const mockOnClose = vi.fn()
   const mockOnSave = vi.fn()
 
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(api.get).mockResolvedValue({ data: mockCategories })
   })
 
-  it('não deve renderizar nada quando isOpen for falso ou task for nula', () => {
+  it('não deve renderizar nada quando isOpen for falso', () => {
     const { container } = render(
       <EditTaskDialog 
         isOpen={false} 
@@ -39,9 +43,23 @@ describe('EditTaskDialog Component', () => {
     )
 
     expect(container).toBeEmptyDOMElement()
+    expect(api.get).not.toHaveBeenCalled()
   })
 
-  it('deve preencher os campos com os dados da tarefa quando isOpen for verdadeiro', () => {
+  it('não deve renderizar nada quando task for nula', () => {
+    const { container } = render(
+      <EditTaskDialog 
+        isOpen={true} 
+        task={null} 
+        onClose={mockOnClose} 
+        onSave={mockOnSave} 
+      />
+    )
+
+    expect(container).toBeEmptyDOMElement()
+  })
+
+  it('deve preencher os campos com os dados da tarefa quando isOpen for verdadeiro', async () => {
     render(
       <EditTaskDialog 
         isOpen={true} 
@@ -55,9 +73,12 @@ describe('EditTaskDialog Component', () => {
     expect(screen.getByDisplayValue('Reservar Igreja')).toBeInTheDocument()
     expect(screen.getByDisplayValue('Confirmar data e horário com o padre')).toBeInTheDocument()
     expect(screen.getByDisplayValue('2026-06-15')).toBeInTheDocument()
+
+    await screen.findByRole('option', { name: 'Buffet' })
+    expect(screen.getByLabelText('Categoria')).toHaveValue('Local')
   })
 
-  it('deve chamar onClose ao clicar no botão de cancelar ou fechar', async () => {
+  it('deve chamar onClose ao clicar no botão de cancelar', async () => {
     const user = userEvent.setup()
 
     render(
@@ -69,8 +90,9 @@ describe('EditTaskDialog Component', () => {
       />
     )
 
-    const cancelButton = screen.getByRole('button', { name: /cancelar/i })
-    await user.click(cancelButton)
+    await screen.findByRole('option', { name: 'Buffet' })
+
+    await user.click(screen.getByRole('button', { name: /cancelar/i }))
 
     expect(mockOnClose).toHaveBeenCalledTimes(1)
   })
@@ -89,12 +111,13 @@ describe('EditTaskDialog Component', () => {
       />
     )
 
+    await screen.findByRole('option', { name: 'Buffet' })
+
     const titleInput = screen.getByDisplayValue('Reservar Igreja')
     await user.clear(titleInput)
     await user.type(titleInput, 'Reservar Catedral')
 
-    const submitButton = screen.getByRole('button', { name: /salvar alterações/i })
-    await user.click(submitButton)
+    await user.click(screen.getByRole('button', { name: /salvar alterações/i }))
 
     await waitFor(() => {
       expect(api.patch).toHaveBeenCalledTimes(1)

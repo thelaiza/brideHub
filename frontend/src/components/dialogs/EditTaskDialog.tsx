@@ -23,11 +23,9 @@ export const EditTaskDialog: React.FC<EditTaskDialogProps> = ({ isOpen, task, on
     if (isOpen) {
       api.get('/api/categories')
         .then((res) => {
-          const list = res.data || [];
+          const list: string[] = res.data || [];
           setCategories(list);
-          if (list.length > 0 && !category) {
-            setCategory(list[0]);
-          }
+          setCategory((current) => current || list[0] || '');
         })
         .catch((err) => console.error('Erro ao carregar categorias:', err));
     }
@@ -104,10 +102,11 @@ export const EditTaskDialog: React.FC<EditTaskDialogProps> = ({ isOpen, task, on
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Categoria</label>
+              <label htmlFor="edit-task-category" className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Categoria</label>
               <div className="relative">
                 <Tag className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                 <select 
+                  id="edit-task-category"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                   className="w-full pl-11 pr-4 py-3 bg-muted/50 border border-border rounded-2xl text-sm text-foreground focus:outline-none focus:border-ring appearance-none cursor-pointer"

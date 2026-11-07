@@ -2,6 +2,13 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NewVendorDialog } from '../components/dialogs/NewVendorDialog'
+import { api } from '../services/api'
+
+vi.mock('../services/api', () => ({
+  api: {
+    get: vi.fn(),
+  },
+}))
 
 describe('NewVendorDialog Component', () => {
   const mockOnClose = vi.fn()
@@ -9,6 +16,7 @@ describe('NewVendorDialog Component', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(api.get).mockResolvedValue({ data: ['Buffet', 'Cerimonial'] })
   })
 
   it('não deve renderizar nada quando isOpen for falso', () => {
@@ -21,9 +29,10 @@ describe('NewVendorDialog Component', () => {
     )
 
     expect(container).toBeEmptyDOMElement()
+    expect(api.get).not.toHaveBeenCalled()
   })
 
-  it('deve renderizar o formulário corretamente quando isOpen for verdadeiro', () => {
+  it('deve renderizar o formulário e carregar as categorias quando isOpen for verdadeiro', async () => {
     render(
       <NewVendorDialog 
         isOpen={true} 
@@ -34,10 +43,13 @@ describe('NewVendorDialog Component', () => {
 
     expect(screen.getByText('Novo Fornecedor')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('Ex: Boulevard Eventos')).toBeInTheDocument()
-    expect(screen.getByPlaceholderText('Ex: Buffet')).toBeInTheDocument()
+
+    expect(await screen.findByRole('option', { name: 'Buffet' })).toBeInTheDocument()
+    expect(api.get).toHaveBeenCalledWith('/api/categories')
+    expect(screen.getByLabelText('Categoria')).toHaveValue('Buffet')
   })
 
-  it('deve chamar onClose ao clicar no botão de cancelar ou fechar', async () => {
+  it('deve chamar onClose ao clicar no botão de cancelar', async () => {
     const user = userEvent.setup()
 
     render(
@@ -48,8 +60,9 @@ describe('NewVendorDialog Component', () => {
       />
     )
 
-    const cancelButton = screen.getByRole('button', { name: /cancelar/i })
-    await user.click(cancelButton)
+    await screen.findByRole('option', { name: 'Buffet' })
+
+    await user.click(screen.getByRole('button', { name: /cancelar/i }))
 
     expect(mockOnClose).toHaveBeenCalledTimes(1)
   })
@@ -65,21 +78,15 @@ describe('NewVendorDialog Component', () => {
       />
     )
 
-    const nameInput = screen.getByPlaceholderText('Ex: Boulevard Eventos')
-    const categoryInput = screen.getByPlaceholderText('Ex: Buffet')
-    const costInput = screen.getByPlaceholderText('0,00')
-    const phoneInput = screen.getByPlaceholderText('(47) 99999-9999')
-    const emailInput = screen.getByPlaceholderText('contato@fornecedor.com')
+    await screen.findByRole('option', { name: 'Cerimonial' })
 
-    await user.type(nameInput, 'Cerimonial Laços de Amor')
-    await user.clear(categoryInput)
-    await user.type(categoryInput, 'Cerimonial')
-    await user.type(costInput, '4000')
-    await user.type(phoneInput, '(47) 98888-8888')
-    await user.type(emailInput, 'contato@lacosdeamor.com')
+    await user.type(screen.getByPlaceholderText('Ex: Boulevard Eventos'), 'Cerimonial Laços de Amor')
+    await user.selectOptions(screen.getByLabelText('Categoria'), 'Cerimonial')
+    await user.type(screen.getByPlaceholderText('0,00'), '4000')
+    await user.type(screen.getByPlaceholderText('(47) 99999-9999'), '(47) 98888-8888')
+    await user.type(screen.getByPlaceholderText('contato@fornecedor.com'), 'contato@lacosdeamor.com')
 
-    const submitButton = screen.getByRole('button', { name: /salvar fornecedor/i })
-    await user.click(submitButton)
+    await user.click(screen.getByRole('button', { name: /salvar fornecedor/i }))
 
     expect(mockOnSave).toHaveBeenCalledTimes(1)
     expect(mockOnSave).toHaveBeenCalledWith({

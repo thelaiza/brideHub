@@ -2,6 +2,13 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NewExpenseDialog } from '../components/dialogs/NewExpenseDialog'
+import { api } from '../services/api'
+
+vi.mock('../services/api', () => ({
+  api: {
+    get: vi.fn(),
+  },
+}))
 
 describe('NewExpenseDialog Component', () => {
   const mockOnClose = vi.fn()
@@ -9,6 +16,7 @@ describe('NewExpenseDialog Component', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(api.get).mockResolvedValue({ data: ['Buffet', 'Local'] })
   })
 
   it('não deve renderizar nada quando isOpen for falso', () => {
@@ -21,9 +29,10 @@ describe('NewExpenseDialog Component', () => {
     )
 
     expect(container).toBeEmptyDOMElement()
+    expect(api.get).not.toHaveBeenCalled()
   })
 
-  it('deve renderizar o formulário corretamente quando isOpen for verdadeiro', () => {
+  it('deve renderizar o formulário e carregar as categorias quando isOpen for verdadeiro', async () => {
     render(
       <NewExpenseDialog 
         isOpen={true} 
@@ -35,9 +44,13 @@ describe('NewExpenseDialog Component', () => {
     expect(screen.getByText('Nova Despesa')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('Ex: Sinal do Buffet')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('0,00')).toBeInTheDocument()
+
+    expect(await screen.findByRole('option', { name: 'Buffet' })).toBeInTheDocument()
+    expect(api.get).toHaveBeenCalledWith('/api/categories')
+    expect(screen.getByLabelText('Categoria')).toHaveValue('Buffet')
   })
 
-  it('deve chamar onClose ao clicar no botão de cancelar ou fechar', async () => {
+  it('deve chamar onClose ao clicar no botão de cancelar', async () => {
     const user = userEvent.setup()
 
     render(
@@ -48,8 +61,9 @@ describe('NewExpenseDialog Component', () => {
       />
     )
 
-    const cancelButton = screen.getByRole('button', { name: /cancelar/i })
-    await user.click(cancelButton)
+    await screen.findByRole('option', { name: 'Buffet' })
+
+    await user.click(screen.getByRole('button', { name: /cancelar/i }))
 
     expect(mockOnClose).toHaveBeenCalledTimes(1)
   })
@@ -57,7 +71,7 @@ describe('NewExpenseDialog Component', () => {
   it('deve chamar onSave com os dados preenchidos e fechar o modal ao submeter', async () => {
     const user = userEvent.setup()
 
-    render(
+    const { container } = render(
       <NewExpenseDialog 
         isOpen={true} 
         onClose={mockOnClose} 
@@ -65,16 +79,16 @@ describe('NewExpenseDialog Component', () => {
       />
     )
 
-    const titleInput = screen.getByPlaceholderText('Ex: Sinal do Buffet')
-    const amountInput = screen.getByPlaceholderText('0,00')
-    const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement
+    await screen.findByRole('option', { name: 'Local' })
 
-    await user.type(titleInput, 'Decoração Igreja')
-    await user.type(amountInput, '3500')
+    const dateInput = container.querySelector('input[type="date"]') as HTMLInputElement
+
+    await user.type(screen.getByPlaceholderText('Ex: Sinal do Buffet'), 'Decoração Igreja')
+    await user.selectOptions(screen.getByLabelText('Categoria'), 'Local')
+    await user.type(screen.getByPlaceholderText('0,00'), '3500')
     await user.type(dateInput, '2026-10-04')
 
-    const submitButton = screen.getByRole('button', { name: /salvar despesa/i })
-    await user.click(submitButton)
+    await user.click(screen.getByRole('button', { name: /salvar despesa/i }))
 
     expect(mockOnSave).toHaveBeenCalledTimes(1)
     expect(mockOnSave).toHaveBeenCalledWith({

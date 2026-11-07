@@ -7,6 +7,7 @@ import type { Expense } from '../types'
 
 vi.mock('../services/api', () => ({
   api: {
+    get: vi.fn(),
     patch: vi.fn(),
   },
 }))
@@ -18,14 +19,17 @@ describe('EditExpenseDialog Component', () => {
     category: 'Buffet',
     amount: 15000,
     dueDate: '2026-10-04T00:00:00.000Z',
-    status: 'pending' as any,
+    status: 'pending' as unknown as Expense['status'],
   }
+
+  const mockCategories = ['Buffet', 'Local']
 
   const mockOnClose = vi.fn()
   const mockOnSave = vi.fn()
 
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(api.get).mockResolvedValue({ data: mockCategories })
   })
 
   it('não deve renderizar nada quando isOpen for falso', () => {
@@ -39,9 +43,10 @@ describe('EditExpenseDialog Component', () => {
     )
 
     expect(screen.queryByText('Editar Despesa')).not.toBeInTheDocument()
+    expect(api.get).not.toHaveBeenCalled()
   })
 
-  it('deve preencher os campos com os dados da despesa quando isOpen for verdadeiro', () => {
+  it('deve preencher os campos com os dados da despesa quando isOpen for verdadeiro', async () => {
     render(
       <EditExpenseDialog 
         isOpen={true} 
@@ -55,9 +60,12 @@ describe('EditExpenseDialog Component', () => {
     expect(screen.getByDisplayValue('Buffet Casamento')).toBeInTheDocument()
     expect(screen.getByDisplayValue('15000')).toBeInTheDocument()
     expect(screen.getByDisplayValue('2026-10-04')).toBeInTheDocument()
+
+    await screen.findByRole('option', { name: 'Local' })
+    expect(screen.getByLabelText('Categoria')).toHaveValue('Buffet')
   })
 
-  it('deve chamar onClose ao clicar no botão de fechar ou cancelar', async () => {
+  it('deve chamar onClose ao clicar no botão de cancelar', async () => {
     const user = userEvent.setup()
 
     render(
@@ -69,8 +77,9 @@ describe('EditExpenseDialog Component', () => {
       />
     )
 
-    const cancelButton = screen.getByRole('button', { name: /cancelar/i })
-    await user.click(cancelButton)
+    await screen.findByRole('option', { name: 'Local' })
+
+    await user.click(screen.getByRole('button', { name: /cancelar/i }))
 
     expect(mockOnClose).toHaveBeenCalledTimes(1)
   })
@@ -89,12 +98,13 @@ describe('EditExpenseDialog Component', () => {
       />
     )
 
+    await screen.findByRole('option', { name: 'Local' })
+
     const titleInput = screen.getByDisplayValue('Buffet Casamento')
     await user.clear(titleInput)
     await user.type(titleInput, 'Buffet Premium')
 
-    const submitButton = screen.getByRole('button', { name: /salvar alterações/i })
-    await user.click(submitButton)
+    await user.click(screen.getByRole('button', { name: /salvar alterações/i }))
 
     await waitFor(() => {
       expect(api.patch).toHaveBeenCalledTimes(1)

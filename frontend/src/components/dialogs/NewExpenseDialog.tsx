@@ -21,11 +21,9 @@ export const NewExpenseDialog: React.FC<NewExpenseDialogProps> = ({ isOpen, onCl
     if (isOpen) {
       api.get('/api/categories')
         .then((res) => {
-          const list = res.data || [];
+          const list: string[] = res.data || [];
           setCategories(list);
-          if (list.length > 0 && !category) {
-            setCategory(list[0]);
-          }
+          setCategory((current) => current || list[0] || '');
         })
         .catch((err) => console.error('Erro ao carregar categorias:', err));
     }
@@ -73,10 +71,11 @@ export const NewExpenseDialog: React.FC<NewExpenseDialogProps> = ({ isOpen, onCl
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Categoria</label>
+              <label htmlFor="new-expense-category" className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Categoria</label>
               <div className="relative">
                 <Tag className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                 <select 
+                  id="new-expense-category"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                   className="w-full pl-11 pr-4 py-3 bg-muted/50 border border-border rounded-2xl text-sm text-foreground focus:outline-none focus:border-ring appearance-none cursor-pointer"

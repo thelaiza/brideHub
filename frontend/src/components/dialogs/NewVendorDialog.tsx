@@ -18,16 +18,13 @@ export const NewVendorDialog: React.FC<NewVendorDialogProps> = ({ isOpen, onClos
   const [cost, setCost] = useState('');
   const [status, setStatus] = useState<'Contratado' | 'Orçamento' | 'Pesquisando'>('Orçamento');
 
-  // Busca as categorias centralizadas da API ao abrir o modal
   useEffect(() => {
     if (isOpen) {
       api.get('/api/categories')
         .then((res) => {
-          const list = res.data || [];
+          const list: string[] = res.data || [];
           setCategories(list);
-          if (list.length > 0 && !category) {
-            setCategory(list[0]);
-          }
+          setCategory((current) => current || list[0] || '');
         })
         .catch((err) => console.error('Erro ao carregar categorias:', err));
     }
@@ -76,10 +73,11 @@ export const NewVendorDialog: React.FC<NewVendorDialogProps> = ({ isOpen, onClos
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Categoria</label>
+              <label htmlFor="new-vendor-category" className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Categoria</label>
               <div className="relative">
                 <Tag className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                 <select 
+                  id="new-vendor-category"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                   className="w-full pl-11 pr-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring text-foreground cursor-pointer appearance-none"

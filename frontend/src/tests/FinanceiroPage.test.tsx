@@ -14,18 +14,28 @@ vi.mock('../services/api', () => ({
 }))
 
 describe('FinanceiroPage Component', () => {
+  const mockCategories = ['Buffet', 'Vestido da noiva']
+
   const mockExpenses = [
     { id: '1', title: 'Buffet Casamento', category: 'Buffet', amount: 15000, dueDate: '2026-10-04T00:00:00.000Z', status: 'pending' },
     { id: '2', title: 'Vestido da Noiva', category: 'Vestido da noiva', amount: 8000, dueDate: '2026-08-10T00:00:00.000Z', status: 'paid' },
   ]
 
+  // A página faz duas chamadas GET (categorias e despesas), então o mock responde por URL.
+  const mockApiGet = () => {
+    vi.mocked(api.get).mockImplementation((async (url: string) => {
+      if (url === '/api/categories') return { data: mockCategories }
+      if (url === '/api/expenses') return { data: mockExpenses }
+      throw new Error(`URL não mockada: ${url}`)
+    }) as never)
+  }
+
   beforeEach(() => {
     vi.clearAllMocks()
+    mockApiGet()
   })
 
   it('deve carregar e exibir a lista de despesas corretamente', async () => {
-    vi.mocked(api.get).mockResolvedValueOnce({ data: mockExpenses })
-
     render(<FinanceiroPage />)
 
     expect(await screen.findByText('Buffet Casamento')).toBeInTheDocument()
@@ -33,9 +43,17 @@ describe('FinanceiroPage Component', () => {
     expect(screen.getByText('R$ 15.000,00')).toBeInTheDocument()
   })
 
+  it('deve carregar as categorias no filtro', async () => {
+    render(<FinanceiroPage />)
+
+    expect(await screen.findByText('Buffet Casamento')).toBeInTheDocument()
+    expect(await screen.findByRole('option', { name: 'Vestido da noiva' })).toBeInTheDocument()
+    expect(api.get).toHaveBeenCalledWith('/api/categories')
+    expect(api.get).toHaveBeenCalledWith('/api/expenses')
+  })
+
   it('deve filtrar despesas pelo campo de busca', async () => {
     const user = userEvent.setup()
-    vi.mocked(api.get).mockResolvedValueOnce({ data: mockExpenses })
 
     render(<FinanceiroPage />)
 
@@ -51,7 +69,6 @@ describe('FinanceiroPage Component', () => {
 
   it('deve alternar o status da despesa ao clicar no botão de status', async () => {
     const user = userEvent.setup()
-    vi.mocked(api.get).mockResolvedValueOnce({ data: mockExpenses })
     vi.mocked(api.patch).mockResolvedValueOnce({ data: { ...mockExpenses[0], status: 'paid' } })
 
     render(<FinanceiroPage />)
@@ -66,7 +83,6 @@ describe('FinanceiroPage Component', () => {
 
   it('deve excluir uma despesa ao confirmar', async () => {
     const user = userEvent.setup()
-    vi.mocked(api.get).mockResolvedValueOnce({ data: mockExpenses })
     vi.mocked(api.delete).mockResolvedValueOnce({})
     vi.spyOn(window, 'confirm').mockReturnValueOnce(true)
 
