@@ -8,6 +8,8 @@ import vendorRoutes from './routes/vendorRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import weddingRoutes from './routes/weddingRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
+import { client } from './services/metrics.service.js';
+import { metricsMiddleware } from './middlewares/metricsMiddleware.js';
 
 if (!process.env.JWT_SECRET) {
   if (process.env.NODE_ENV === 'test') {
@@ -31,6 +33,7 @@ app.use('/api', vendorRoutes);
 app.use('/api', dashboardRoutes);
 app.use('/api', weddingRoutes);
 app.use('/api', categoryRoutes);
+app.use(metricsMiddleware);
 
 app.get('/api/status', async (req, res) => {
   try {
@@ -38,6 +41,15 @@ app.get('/api/status', async (req, res) => {
     return res.json({ status: 'online', database: 'connected' });
   } catch (error) {
     return res.status(500).json({ status: 'error', message: 'Database connection failed' });
+  }
+});
+
+app.get('/metrics', async (req, res) => {
+  try {
+    res.set('Content-Type', client.register.contentType);
+    res.end(await client.register.metrics());
+  } catch (ex) {
+    res.status(500).end(ex);
   }
 });
 
