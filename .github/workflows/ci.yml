@@ -122,3 +122,33 @@ jobs:
           name: coverage-frontend
           path: frontend/coverage/lcov.info
           if-no-files-found: ignore
+
+  sonarcloud:
+    name: SonarCloud Analysis
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 
+
+      - name: Baixar artefatos de cobertura do Backend
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-backend
+          path: backend/coverage
+
+      - name: Baixar artefatos de cobertura do Frontend
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-frontend
+          path: frontend/coverage
+
+      - name: SonarCloud Scan
+        if: env.SONAR_TOKEN != ''
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

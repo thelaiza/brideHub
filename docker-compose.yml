@@ -65,7 +65,25 @@ services:
       - prometheus
     profiles: ['observability']
 
+  sonarqube:
+    image: sonarqube:community
+    container_name: bridehub_sonarqube
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    environment:
+      - SONAR_JDBC_USERNAME=postgres
+      - SONAR_JDBC_PASSWORD=postgres
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+    profiles: ['observability']
+
 volumes:
   pgdata:
   grafana-data:
   api-uploads:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
