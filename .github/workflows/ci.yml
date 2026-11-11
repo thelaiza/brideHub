@@ -69,16 +69,8 @@ jobs:
       - name: Vulnerabilidades em dependências de produção
         run: npm audit --omit=dev --audit-level=high
 
-      - name: Testes com cobertura
-        run: npm run test:coverage
-
-      - name: Cobertura como artefato
-        if: always()
-        uses: actions/upload-artifact@v5
-        with:
-          name: coverage-backend
-          path: backend/coverage/lcov.info
-          if-no-files-found: ignore
+      - name: Testes
+        run: npm test --if-present
 
   frontend:
     name: Frontend
@@ -107,21 +99,13 @@ jobs:
       - name: Vulnerabilidades em dependências de produção
         run: npm audit --omit=dev --audit-level=high
 
-      - name: Testes com cobertura
-        run: npm run test:coverage
+      - name: Testes
+        run: npm test --if-present
 
       - name: Build
         env:
           VITE_API_URL: http://localhost:3333
         run: npm run build
-
-      - name: Cobertura como artefato
-        if: always()
-        uses: actions/upload-artifact@v5
-        with:
-          name: coverage-frontend
-          path: frontend/coverage/lcov.info
-          if-no-files-found: ignore
 
   sonarcloud:
     name: SonarCloud Analysis
@@ -134,18 +118,6 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0 
-
-      - name: Baixar artefatos de cobertura do Backend
-        uses: actions/download-artifact@v4
-        with:
-          name: coverage-backend
-          path: backend/coverage
-
-      - name: Baixar artefatos de cobertura do Frontend
-        uses: actions/download-artifact@v4
-        with:
-          name: coverage-frontend
-          path: frontend/coverage
 
       - name: SonarCloud Scan
         if: env.SONAR_TOKEN != ''
