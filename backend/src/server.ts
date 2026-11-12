@@ -23,7 +23,11 @@ if (!process.env.JWT_SECRET) {
 const prisma = new PrismaClient();
 const app = express();
 
-app.use(cors());
+app.disable('x-powered-by');
+
+const allowedOrigins = process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : '*';
+app.use(cors({ origin: allowedOrigins }));
+
 app.use(express.json());
 
 app.use('/api', authRoutes);
@@ -39,7 +43,7 @@ app.get('/api/status', async (req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
     return res.json({ status: 'online', database: 'connected' });
-  } catch (error) {
+  } catch {
     return res.status(500).json({ status: 'error', message: 'Database connection failed' });
   }
 });
@@ -47,9 +51,11 @@ app.get('/api/status', async (req, res) => {
 app.get('/metrics', async (req, res) => {
   try {
     res.set('Content-Type', client.register.contentType);
-    res.end(await client.register.metrics());
+    const metricsData = await client.register.metrics();
+    return res.end(metricsData);
   } catch (ex) {
-    res.status(500).end(ex);
+    console.error('Erro ao coletar métricas:', ex);
+    return res.status(500).end('Internal Server Error collecting metrics');
   }
 });
 
