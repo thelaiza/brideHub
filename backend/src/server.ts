@@ -20,15 +20,17 @@ if (!process.env.JWT_SECRET) {
   }
 }
 
+export const getAllowedOrigins = (value: string | undefined = process.env.CORS_ORIGINS) =>
+  value ? value.split(',').map((origin) => origin.trim()) : '*';
+
 const prisma = new PrismaClient();
 const app = express();
 
 app.disable('x-powered-by');
 
-const allowedOrigins = process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : '*';
-app.use(cors({ origin: allowedOrigins }));
-
+app.use(cors({ origin: getAllowedOrigins() }));
 app.use(express.json());
+app.use(metricsMiddleware);
 
 app.use('/api', authRoutes);
 app.use('/api', expenseRoutes);
@@ -37,7 +39,6 @@ app.use('/api', vendorRoutes);
 app.use('/api', dashboardRoutes);
 app.use('/api', weddingRoutes);
 app.use('/api', categoryRoutes);
-app.use(metricsMiddleware);
 
 app.get('/api/status', async (req, res) => {
   try {
