@@ -8,6 +8,8 @@ import vendorRoutes from './routes/vendorRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import weddingRoutes from './routes/weddingRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
+import { client } from './services/metrics.service.js';
+import { metricsMiddleware } from './middlewares/metricsMiddleware.js';
 
 if (!process.env.JWT_SECRET) {
   if (process.env.NODE_ENV === 'test') {
@@ -21,7 +23,11 @@ if (!process.env.JWT_SECRET) {
 const prisma = new PrismaClient();
 const app = express();
 
-app.use(cors());
+app.disable('x-powered-by');
+
+const allowedOrigins = process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : '*';
+app.use(cors({ origin: allowedOrigins }));
+
 app.use(express.json());
 
 app.use('/api', authRoutes);
@@ -31,13 +37,25 @@ app.use('/api', vendorRoutes);
 app.use('/api', dashboardRoutes);
 app.use('/api', weddingRoutes);
 app.use('/api', categoryRoutes);
+app.use(metricsMiddleware);
 
 app.get('/api/status', async (req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
     return res.json({ status: 'online', database: 'connected' });
-  } catch (error) {
+  } catch {
     return res.status(500).json({ status: 'error', message: 'Database connection failed' });
+  }
+});
+
+app.get('/metrics', async (req, res) => {
+  try {
+    res.set('Content-Type', client.register.contentType);
+    const metricsData = await client.register.metrics();
+    return res.end(metricsData);
+  } catch (ex) {
+    console.error('Erro ao coletar métricas:', ex);
+    return res.status(500).end('Internal Server Error collecting metrics');
   }
 });
 

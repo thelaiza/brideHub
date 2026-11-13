@@ -69,16 +69,15 @@ jobs:
       - name: Vulnerabilidades em dependências de produção
         run: npm audit --omit=dev --audit-level=high
 
-      - name: Testes com cobertura
+      - name: Testes e Cobertura
         run: npm run test:coverage
 
       - name: Cobertura como artefato
-        if: always()
         uses: actions/upload-artifact@v5
         with:
           name: coverage-backend
           path: backend/coverage/lcov.info
-          if-no-files-found: ignore
+          if-no-files-found: error
 
   frontend:
     name: Frontend
@@ -107,8 +106,8 @@ jobs:
       - name: Vulnerabilidades em dependências de produção
         run: npm audit --omit=dev --audit-level=high
 
-      - name: Testes com cobertura
-        run: npm run test:coverage
+      - name: Testes e Cobertura
+        run: npm run test:coverage --if-present
 
       - name: Build
         env:
@@ -116,9 +115,46 @@ jobs:
         run: npm run build
 
       - name: Cobertura como artefato
-        if: always()
         uses: actions/upload-artifact@v5
         with:
           name: coverage-frontend
           path: frontend/coverage/lcov.info
           if-no-files-found: ignore
+
+  sonarcloud:
+    name: SonarCloud Analysis
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Baixar cobertura do backend
+        uses: actions/download-artifact@v5
+        with:
+          name: coverage-backend
+          path: backend/coverage
+
+      - name: Baixar cobertura do frontend
+        continue-on-error: true
+        uses: actions/download-artifact@v5
+        with:
+          name: coverage-frontend
+          path: frontend/coverage
+
+      - name: Ajustar caminhos do lcov para a raiz do monorepo
+        run: |
+          sed -i 's#^SF:\([^/]\)#SF:backend/\1#' backend/coverage/lcov.info
+          if [ -f frontend/coverage/lcov.info ]; then
+            sed -i 's#^SF:\([^/]\)#SF:frontend/\1#' frontend/coverage/lcov.info
+          fi
+
+      - name: SonarCloud Scan
+        if: env.SONAR_TOKEN != ''
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
