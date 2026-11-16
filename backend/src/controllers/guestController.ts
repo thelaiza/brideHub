@@ -1,0 +1,152 @@
+import { PrismaClient } from '@prisma/client';
+import type { AuthenticatedRequest } from '../middlewares/authMiddleware.js';
+
+const prisma = new PrismaClient();
+
+export const getGuests = async (req: AuthenticatedRequest, res: any) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuário não autenticado.' });
+    }
+
+    const guests = await prisma.guest.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return res.json(guests);
+  } catch (error) {
+    console.error('ERRO AO BUSCAR CONVIDADOS:', error);
+    return res.status(500).json({ error: 'Erro ao buscar convidados.' });
+  }
+};
+
+export const createGuest = async (req: AuthenticatedRequest, res: any) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuário não autenticado.' });
+    }
+
+    const { name, group, status, email, phone } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ error: 'O nome do convidado é obrigatório.' });
+    }
+
+    const guest = await prisma.guest.create({
+      data: {
+        name,
+        group: group || 'Amigos',
+        status: status || 'Pendente',
+        email: email || null,
+        phone: phone || null,
+        userId: userId as string,
+      },
+    });
+
+    return res.status(201).json(guest);
+  } catch (error) {
+    console.error('ERRO AO CRIAR CONVIDADO:', error);
+    return res.status(500).json({ error: 'Erro ao criar convidado.' });
+  }
+};
+
+export const updateGuest = async (req: AuthenticatedRequest, res: any) => {
+  try {
+    const userId = req.userId;
+    const id = String(req.params.id);
+    const { name, group, status, email, phone } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuário não autenticado.' });
+    }
+
+    const existingGuest = await prisma.guest.findFirst({
+      where: { id, userId },
+    });
+
+    if (!existingGuest) {
+      return res.status(404).json({ error: 'Convidado não encontrado.' });
+    }
+
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (group !== undefined) updateData.group = group;
+    if (status !== undefined) updateData.status = status;
+    if (email !== undefined) updateData.email = email || null;
+    if (phone !== undefined) updateData.phone = phone || null;
+
+    const updatedGuest = await prisma.guest.update({
+      where: { id },
+      data: updateData,
+    });
+
+    return res.json(updatedGuest);
+  } catch (error) {
+    console.error('ERRO AO ATUALIZAR CONVIDADO:', error);
+    return res.status(500).json({ error: 'Erro ao atualizar convidado.' });
+  }
+};
+
+export const deleteGuest = async (req: AuthenticatedRequest, res: any) => {
+  try {
+    const userId = req.userId;
+    const id = String(req.params.id);
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuário não autenticado.' });
+    }
+
+    const existingGuest = await prisma.guest.findFirst({
+      where: { id, userId },
+    });
+
+    if (!existingGuest) {
+      return res.status(404).json({ error: 'Convidado não encontrado.' });
+    }
+
+    await prisma.guest.delete({
+      where: { id },
+    });
+
+    return res.status(204).send();
+  } catch (error) {
+    console.error('ERRO AO DELETAR CONVIDADO:', error);
+    return res.status(500).json({ error: 'Erro ao deletar convidado.' });
+  }
+};
+
+export const importGuests = async (req: AuthenticatedRequest, res: any) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuário não autenticado.' });
+    }
+
+    const { guests } = req.body;
+
+    if (!Array.isArray(guests) || guests.length === 0) {
+      return res.status(400).json({ error: 'Nenhum convidado fornecido para importação.' });
+    }
+
+    const guestsData = guests.map((g: any) => ({
+      name: g.name || 'Convidado',
+      group: g.group || 'Amigos',
+      status: g.status || 'Pendente',
+      email: g.email || null,
+      phone: g.phone || null,
+      userId: userId as string,
+    }));
+
+    await prisma.guest.createMany({
+      data: guestsData,
+    });
+
+    return res.status(201).json({ message: `${guestsData.length} convidados importados com sucesso.` });
+  } catch (error) {
+    console.error('ERRO AO IMPORTAR CONVIDADOS:', error);
+    return res.status(500).json({ error: 'Erro ao importar convidados.' });
+  }
+};
