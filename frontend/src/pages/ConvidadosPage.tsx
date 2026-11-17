@@ -54,15 +54,16 @@ export const ConvidadosPage: React.FC = () => {
     return matchesGroup && matchesStatus && matchesSearch;
   });
 
-  const handleAddGuest = async (newGuest: Omit<Guest, "id">): Promise<void> => {
-    try {
-      const response = await api.post('/api/guests', newGuest);
-      setGuests([response.data, ...guests]);
-      setIsNewOpen(false);
-    } catch (error) {
-      console.error('Erro ao criar convidado:', error);
-    }
-  };
+const handleAddGuest = async (newGuest: Omit<Guest, 'id'>): Promise<void> => {
+  try {
+    const response = await api.post('/api/guests', newGuest);
+    setGuests((prev) => [response.data, ...prev]);
+    setIsNewOpen(false);
+  } catch (error) {
+    console.error('Erro ao criar convidado:', error);
+    throw error; 
+  }
+};
 
   const handleUpdateGuest = async (updatedGuest: Guest) => {
     try {

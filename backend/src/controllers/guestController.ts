@@ -1,6 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 import type { AuthenticatedRequest } from '../middlewares/authMiddleware.js';
-import { importGuestService } from '../services/importGuestService.js';
+import {
+  importGuestService,
+  ImportValidationError,
+  clean,
+  VALID_GROUPS,
+  VALID_STATUSES,
+} from '../services/importGuestService.js';
 
 const prisma = new PrismaClient();
 
@@ -32,18 +38,29 @@ export const createGuest = async (req: AuthenticatedRequest, res: any) => {
 
     const { name, group, status, email, phone } = req.body;
 
-    if (!name || typeof name !== 'string' || !name.trim()) {
+    const cleanName = clean(name);
+    if (!cleanName) {
       return res.status(400).json({ error: 'O nome do convidado é obrigatório.' });
+    }
+
+    const cleanGroup = clean(group) || 'Amigos';
+    const cleanStatus = clean(status) || 'Pendente';
+
+    if (!(VALID_GROUPS as readonly string[]).includes(cleanGroup)) {
+      return res.status(400).json({ error: 'Grupo inválido.' });
+    }
+    if (!(VALID_STATUSES as readonly string[]).includes(cleanStatus)) {
+      return res.status(400).json({ error: 'Status inválido.' });
     }
 
     const guest = await prisma.guest.create({
       data: {
-        name: name.trim(),
-        group: group || 'Amigos',
-        status: status || 'Pendente',
-        email: email && email.trim() !== '' ? email.trim() : null,
-        phone: phone && phone.trim() !== '' ? phone.trim() : null,
-        userId: userId as string,
+        name: cleanName.slice(0, 80),
+        group: cleanGroup,
+        status: cleanStatus,
+        email: clean(email).slice(0, 120) || null,
+        phone: clean(phone).slice(0, 30) || null,
+        userId,
       },
     });
 
@@ -72,12 +89,34 @@ export const updateGuest = async (req: AuthenticatedRequest, res: any) => {
       return res.status(404).json({ error: 'Convidado não encontrado.' });
     }
 
-    const updateData: any = {};
-    if (name !== undefined) updateData.name = name.trim();
-    if (group !== undefined) updateData.group = group;
-    if (status !== undefined) updateData.status = status;
-    if (email !== undefined) updateData.email = email && email.trim() !== '' ? email.trim() : null;
-    if (phone !== undefined) updateData.phone = phone && phone.trim() !== '' ? phone.trim() : null;
+    const updateData: Record<string, string | null> = {};
+
+    if (name !== undefined) {
+      const cleanName = clean(name);
+      if (!cleanName) {
+        return res.status(400).json({ error: 'O nome do convidado é obrigatório.' });
+      }
+      updateData.name = cleanName.slice(0, 80);
+    }
+
+    if (group !== undefined) {
+      const cleanGroup = clean(group);
+      if (!(VALID_GROUPS as readonly string[]).includes(cleanGroup)) {
+        return res.status(400).json({ error: 'Grupo inválido.' });
+      }
+      updateData.group = cleanGroup;
+    }
+
+    if (status !== undefined) {
+      const cleanStatus = clean(status);
+      if (!(VALID_STATUSES as readonly string[]).includes(cleanStatus)) {
+        return res.status(400).json({ error: 'Status inválido.' });
+      }
+      updateData.status = cleanStatus;
+    }
+
+    if (email !== undefined) updateData.email = clean(email).slice(0, 120) || null;
+    if (phone !== undefined) updateData.phone = clean(phone).slice(0, 30) || null;
 
     const updatedGuest = await prisma.guest.update({
       where: { id },
@@ -126,14 +165,16 @@ export const importGuests = async (req: AuthenticatedRequest, res: any) => {
       return res.status(401).json({ error: 'Usuário não autenticado.' });
     }
 
-    const { guests } = req.body;
-
-    // Delega o processamento e as regras de negócio para o service dedicado
-    const result = await importGuestService(userId, guests);
+    const result = await importGuestService(userId, req.body?.guests);
 
     return res.status(201).json(result);
   } catch (error: any) {
     console.error('ERRO AO IMPORTAR CONVIDADOS:', error);
-    return res.status(400).json({ error: error.message || 'Erro ao importar convidados.' });
+
+    if (error instanceof ImportValidationError) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    return res.status(500).json({ error: 'Erro ao importar convidados.' });
   }
 };
