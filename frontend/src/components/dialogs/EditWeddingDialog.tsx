@@ -38,7 +38,7 @@ export const EditWeddingDialog: React.FC<EditWeddingDialogProps> = ({ children, 
     }
   }, [initialData, isOpen]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     try {
       const response = await api.put('/api/wedding', {
@@ -46,7 +46,7 @@ export const EditWeddingDialog: React.FC<EditWeddingDialogProps> = ({ children, 
         groom,
         date,
         venue,
-        budget: parseFloat(budget) || 0,
+        budget: Number.parseFloat(budget) || 0,
       });
 
       if (onSave) {
@@ -60,16 +60,24 @@ export const EditWeddingDialog: React.FC<EditWeddingDialogProps> = ({ children, 
 
   return (
     <>
-      <div onClick={() => setIsOpen(true)} className="inline-block cursor-pointer">
+      <button 
+        type="button" 
+        onClick={() => setIsOpen(true)} 
+        className="inline-block cursor-pointer bg-transparent border-none p-0 text-left"
+      >
         {children}
-      </div>
+      </button>
 
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-fade-in">
           <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-800 space-y-6">
             <div className="flex justify-between items-center">
               <h3 className="text-xl font-bold text-slate-800 dark:text-white">Editar Dados do Casamento</h3>
-              <button onClick={() => setIsOpen(false)} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-colors">
+              <button 
+                type="button"
+                onClick={() => setIsOpen(false)} 
+                className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-colors cursor-pointer"
+              >
                 <X size={20} />
               </button>
             </div>
@@ -77,10 +85,11 @@ export const EditWeddingDialog: React.FC<EditWeddingDialogProps> = ({ children, 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Noiva</label>
+                  <label htmlFor="edit-bride-input" className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Noiva</label>
                   <div className="relative">
                     <Heart className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                     <input 
+                      id="edit-bride-input"
                       type="text" 
                       required
                       value={bride}
@@ -90,10 +99,11 @@ export const EditWeddingDialog: React.FC<EditWeddingDialogProps> = ({ children, 
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Noivo</label>
+                  <label htmlFor="edit-groom-input" className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Noivo</label>
                   <div className="relative">
                     <Heart className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                     <input 
+                      id="edit-groom-input"
                       type="text" 
                       required
                       value={groom}
@@ -105,10 +115,11 @@ export const EditWeddingDialog: React.FC<EditWeddingDialogProps> = ({ children, 
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Data do Casamento</label>
+                <label htmlFor="edit-date-input" className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Data do Casamento</label>
                 <div className="relative">
                   <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                   <input 
+                    id="edit-date-input"
                     type="date" 
                     required
                     value={date}
@@ -119,10 +130,11 @@ export const EditWeddingDialog: React.FC<EditWeddingDialogProps> = ({ children, 
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Local / Cidade</label>
+                <label htmlFor="edit-venue-input" className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Local / Cidade</label>
                 <div className="relative">
                   <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                   <input 
+                    id="edit-venue-input"
                     type="text" 
                     required
                     value={venue}
@@ -133,10 +145,11 @@ export const EditWeddingDialog: React.FC<EditWeddingDialogProps> = ({ children, 
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Orçamento Total (R$)</label>
+                <label htmlFor="edit-budget-input" className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Orçamento Total (R$)</label>
                 <div className="relative">
                   <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                   <input 
+                    id="edit-budget-input"
                     type="number" 
                     step="0.01"
                     required
@@ -151,7 +164,7 @@ export const EditWeddingDialog: React.FC<EditWeddingDialogProps> = ({ children, 
                 <button 
                   type="button" 
                   onClick={() => setIsOpen(false)}
-                  className="px-5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                  className="px-5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>
