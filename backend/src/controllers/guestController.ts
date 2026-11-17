@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import type { AuthenticatedRequest } from '../middlewares/authMiddleware.js';
+import { importGuestService } from '../services/importGuestService.js';
 
 const prisma = new PrismaClient();
 
@@ -127,26 +128,12 @@ export const importGuests = async (req: AuthenticatedRequest, res: any) => {
 
     const { guests } = req.body;
 
-    if (!Array.isArray(guests) || guests.length === 0) {
-      return res.status(400).json({ error: 'Nenhum convidado fornecido para importação.' });
-    }
+    // Delega o processamento e as regras de negócio para o service dedicado
+    const result = await importGuestService(userId, guests);
 
-    const guestsData = guests.map((g: any) => ({
-      name: g.name?.trim() || 'Convidado',
-      group: g.group || 'Amigos',
-      status: g.status || 'Pendente',
-      email: g.email && g.email.trim() !== '' ? g.email.trim() : null,
-      phone: g.phone && g.phone.trim() !== '' ? g.phone.trim() : null,
-      userId: userId as string,
-    }));
-
-    await prisma.guest.createMany({
-      data: guestsData,
-    });
-
-    return res.status(201).json({ message: `${guestsData.length} convidados importados com sucesso.` });
-  } catch (error) {
+    return res.status(201).json(result);
+  } catch (error: any) {
     console.error('ERRO AO IMPORTAR CONVIDADOS:', error);
-    return res.status(500).json({ error: 'Erro ao importar convidados.' });
+    return res.status(400).json({ error: error.message || 'Erro ao importar convidados.' });
   }
 };

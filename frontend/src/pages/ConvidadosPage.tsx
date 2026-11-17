@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Upload, Search, Pencil, Trash2, Mail, Phone, Check, X, Clock, Download } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Upload, Search, Pencil, Trash2, Mail, Phone, Check, X, Clock } from 'lucide-react';
 import { NewGuestDialog } from '../components/dialogs/NewGuestDialog';
 import { EditGuestDialog } from '../components/dialogs/EditGuestDialog';
+import { ImportGuestsDialog } from '../components/dialogs/ImportGuestsDialog';
 import type { Guest, GuestGroup, GuestStatus } from '../types';
 import { api } from '../services/api';
 
@@ -13,55 +14,6 @@ const statusMeta: Record<GuestStatus, { label: string; icon: typeof Check; cls: 
   Negado: { label: "Não vai", icon: X, cls: "bg-rose-50 text-rose-700 border-rose-200" },
 };
 
-function normalizeGroup(v: string): GuestGroup {
-  const s = v.toLowerCase();
-  if (s.includes("noiva")) return "Família da noiva";
-  if (s.includes("noivo")) return "Família do noivo";
-  if (s.includes("padrinho") || s.includes("madrinha")) return "Padrinhos";
-  if (s.includes("fornec")) return "Fornecedores";
-  return "Amigos";
-}
-
-function normalizeStatus(v: string): GuestStatus {
-  const s = v.toLowerCase();
-  if (s.startsWith("conf") || s === "sim") return "Confirmado";
-  if (s.startsWith("neg") || s.startsWith("não") || s.startsWith("nao")) return "Negado";
-  return "Pendente";
-}
-
-function parseCsv(text: string): Omit<Guest, "id">[] {
-  const lines = text.split(/\r?\n/).filter((l) => l.trim());
-  if (!lines.length) return [];
-  const sep = lines[0].includes(";") ? ";" : ",";
-  const cells = (l: string) => l.split(sep).map((c) => c.trim().replace(/^"|"$/g, ""));
-  const header = cells(lines[0]).map((h) => h.toLowerCase());
-  const hasHeader = header.some((h) => ["nome", "name"].includes(h));
-  const idx = (keys: string[], fb: number) => {
-    const i = header.findIndex((h) => keys.some((k) => h.includes(k)));
-    return hasHeader ? i : fb;
-  };
-  const iName = idx(["nome", "name"], 0), iGroup = idx(["grupo", "group"], 1), iStatus = idx(["status"], 2),
-    iEmail = idx(["mail"], 3), iPhone = idx(["telefone", "phone", "celular"], 4);
-  return (hasHeader ? lines.slice(1) : lines)
-    .map(cells)
-    .filter((c) => c[iName])
-    .map((c) => ({
-      name: c[iName].slice(0, 80),
-      group: normalizeGroup(iGroup >= 0 ? c[iGroup] ?? "" : ""),
-      status: normalizeStatus(iStatus >= 0 ? c[iStatus] ?? "" : ""),
-      email: iEmail >= 0 ? (c[iEmail] ?? "").slice(0, 120) : "",
-      phone: iPhone >= 0 ? (c[iPhone] ?? "").slice(0, 30) : "",
-    }));
-}
-
-function downloadTemplate() {
-  const csv = "nome;grupo;status;email;telefone\nMaria Exemplo;Família da noiva;Pendente;maria@email.com;(47) 99999-0000\n";
-  const url = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" }));
-  const a = document.createElement("a");
-  a.href = url; a.download = "modelo-convidados.csv"; a.click();
-  URL.revokeObjectURL(url);
-}
-
 export const ConvidadosPage: React.FC = () => {
   const [guests, setGuests] = useState<Guest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,9 +22,9 @@ export const ConvidadosPage: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<"Todos" | GuestStatus>("Todos");
   
   const [isNewOpen, setIsNewOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [editingGuest, setEditingGuest] = useState<Guest | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const fetchGuests = async () => {
     try {
@@ -102,7 +54,7 @@ export const ConvidadosPage: React.FC = () => {
     return matchesGroup && matchesStatus && matchesSearch;
   });
 
-  const handleAddGuest = async (newGuest: Omit<Guest, "id">) => {
+  const handleAddGuest = async (newGuest: Omit<Guest, "id">): Promise<void> => {
     try {
       const response = await api.post('/api/guests', newGuest);
       setGuests([response.data, ...guests]);
@@ -141,25 +93,11 @@ export const ConvidadosPage: React.FC = () => {
     }
   };
 
-  async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    try {
-      const list = parseCsv(await file.text());
-      if (list.length > 0) {
-        await api.post('/api/guests/import', { guests: list });
-        await fetchGuests();
-        setNotice(`${list.length} convidado(s) importado(s) com sucesso de "${file.name}".`);
-      } else {
-        setNotice("Nenhum convidado encontrado na planilha. Verifique o modelo CSV.");
-      }
-    } catch (error) {
-      console.error('Erro ao importar planilha:', error);
-      setNotice("Erro ao processar o arquivo CSV.");
-    }
+  const handleImportSuccess = async (message: string) => {
+    setNotice(message);
+    await fetchGuests();
     setTimeout(() => setNotice(null), 5000);
-  }
+  };
 
   const renderContent = () => {
     if (loading) {
@@ -241,9 +179,8 @@ export const ConvidadosPage: React.FC = () => {
           <p className="text-sm text-muted-foreground mt-1">Confirmação de presença e controle da lista de convidados (RSVP).</p>
         </div>
         <div className="flex items-center gap-3">
-          <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={onFile} />
           <button 
-            onClick={() => fileRef.current?.click()} 
+            onClick={() => setIsImportOpen(true)} 
             className="border border-border bg-card hover:bg-muted font-semibold px-4 py-2.5 rounded-2xl shadow-sm flex items-center gap-2 transition-all cursor-pointer text-sm"
           >
             <Upload size={16} /> Importar planilha
@@ -269,9 +206,6 @@ export const ConvidadosPage: React.FC = () => {
               {conf}<span className="text-muted-foreground text-xl"> / {total} convidados</span>
             </div>
           </div>
-          <button onClick={downloadTemplate} className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline cursor-pointer">
-            <Download size={14} /> Baixar modelo de planilha
-          </button>
         </div>
 
         <div className="h-3 w-full rounded-full bg-muted overflow-hidden flex">
@@ -311,7 +245,7 @@ export const ConvidadosPage: React.FC = () => {
             value={searchTerm} 
             onChange={(e) => setSearchTerm(e.target.value)} 
             placeholder="Buscar por nome, e-mail, telefone..." 
-            className="w-full pl-11 pr-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring transition-colors text-foreground"
+            className="w-full pl-11 pr-4 py-2.5 bg-muted/55 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring transition-colors text-foreground"
           />
         </div>
 
@@ -355,6 +289,12 @@ export const ConvidadosPage: React.FC = () => {
         onClose={() => setEditingGuest(null)}
         guest={editingGuest}
         onSave={handleUpdateGuest}
+      />
+
+      <ImportGuestsDialog 
+        isOpen={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
+        onImportSuccess={handleImportSuccess}
       />
     </div>
   );
