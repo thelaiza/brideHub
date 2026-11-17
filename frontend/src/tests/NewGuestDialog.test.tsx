@@ -24,7 +24,6 @@ describe('NewGuestDialog Component', () => {
     )
 
     expect(screen.getByText('Novo Convidado')).toBeInTheDocument()
-    // Placeholder ajustado para corresponder ao componente real
     expect(screen.getByPlaceholderText(/Nome completo do convidado/i)).toBeInTheDocument()
   })
 
