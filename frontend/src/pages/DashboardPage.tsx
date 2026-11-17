@@ -41,7 +41,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
       }
     };
 
-    fetchDashboardData();
+    void fetchDashboardData();
   }, []);
 
   const targetDate = wedding?.date ? new Date(wedding.date.split('T')[0] + 'T00:00:00') : null;
@@ -89,9 +89,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
           </p>
         </div>
         <EditWeddingDialog initialData={wedding || undefined} onSave={(updated) => setWedding(updated)}>
-          <button className="inline-flex items-center gap-2 text-xs font-semibold bg-card hover:bg-muted/60 transition rounded-2xl px-4 py-3 border border-border cursor-pointer text-foreground shadow-sm">
+          <span className="inline-flex items-center gap-2 text-xs font-semibold bg-card hover:bg-muted/60 transition rounded-2xl px-4 py-3 border border-border cursor-pointer text-foreground shadow-sm">
             <Pencil size={14} /> {wedding ? 'Editar casamento' : 'Adicionar casamento'}
-          </button>
+          </span>
         </EditWeddingDialog>
       </div>
 
@@ -117,11 +117,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div 
-          role="button"
-          tabIndex={0}
+        <button 
+          type="button"
           onClick={() => onNavigate?.('financeiro')} 
-          className="rounded-3xl border border-border bg-card p-6 shadow-sm hover:shadow-md transition cursor-pointer group"
+          className="rounded-3xl border border-border bg-card p-6 shadow-sm hover:shadow-md transition cursor-pointer group text-left w-full"
         >
           <div className="flex items-center justify-between">
             <div className="size-10 rounded-2xl bg-rose-50 text-rose-600 grid place-items-center"><Wallet size={20} /></div>
@@ -135,13 +134,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
           <div className="h-1.5 rounded-full bg-muted mt-4 overflow-hidden">
             <div className="h-full rounded-full bg-primary" style={{ width: `${budgetPct}%` }} />
           </div>
-        </div>
+        </button>
 
-        <div 
-          role="button"
-          tabIndex={0}
+        <button 
+          type="button"
           onClick={() => onNavigate?.('tarefas')} 
-          className="rounded-3xl border border-border bg-card p-6 shadow-sm hover:shadow-md transition cursor-pointer group"
+          className="rounded-3xl border border-border bg-card p-6 shadow-sm hover:shadow-md transition cursor-pointer group text-left w-full"
         >
           <div className="flex items-center justify-between">
             <div className="size-10 rounded-2xl bg-purple-50 text-purple-600 grid place-items-center"><CheckSquare size={20} /></div>
@@ -155,13 +153,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
           <div className="h-1.5 rounded-full bg-muted mt-4 overflow-hidden">
             <div className="h-full rounded-full bg-purple-600" style={{ width: `${taskPct}%` }} />
           </div>
-        </div>
+        </button>
 
-        <div 
-          role="button"
-          tabIndex={0}
+        <button 
+          type="button"
           onClick={() => onNavigate?.('fornecedores')} 
-          className="rounded-3xl border border-border bg-card p-6 shadow-sm hover:shadow-md transition cursor-pointer group"
+          className="rounded-3xl border border-border bg-card p-6 shadow-sm hover:shadow-md transition cursor-pointer group text-left w-full"
         >
           <div className="flex items-center justify-between">
             <div className="size-10 rounded-2xl bg-indigo-50 text-indigo-600 grid place-items-center"><Users size={20} /></div>
@@ -175,13 +172,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
           <div className="h-1.5 rounded-full bg-muted mt-4 overflow-hidden">
             <div className="h-full rounded-full bg-indigo-600" style={{ width: `${vendorPct}%` }} />
           </div>
-        </div>
+        </button>
 
-        <div 
-          role="button"
-          tabIndex={0}
+        <button 
+          type="button"
           onClick={() => onNavigate?.('financeiro')} 
-          className="rounded-3xl border border-border bg-card p-6 shadow-sm hover:shadow-md transition cursor-pointer group"
+          className="rounded-3xl border border-border bg-card p-6 shadow-sm hover:shadow-md transition cursor-pointer group text-left w-full"
         >
           <div className="flex items-center justify-between">
             <div className="size-10 rounded-2xl bg-emerald-50 text-emerald-600 grid place-items-center"><TrendingUp size={20} /></div>
@@ -195,14 +191,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
           <div className="h-1.5 rounded-full bg-muted mt-4 overflow-hidden">
             <div className="h-full rounded-full bg-emerald-600" style={{ width: `${budgetValue > 0 ? Math.min(Math.round((spent / budgetValue) * 100), 100) : 0}%` }} />
           </div>
-        </div>
+        </button>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
         <div className="rounded-3xl border border-border bg-card p-6 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold text-foreground font-display">Próximas tarefas</h3>
-            <button onClick={() => onNavigate?.('tarefas')} className="text-xs font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer">
+            <button type="button" onClick={() => onNavigate?.('tarefas')} className="text-xs font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer">
               Ver todas <ArrowUpRight size={14} />
             </button>
           </div>

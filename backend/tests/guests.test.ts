@@ -151,6 +151,32 @@ describe('Guest Management & Import API Tests', () => {
     expect(response.body).toHaveProperty('message');
   });
 
+  it('deve ignorar convidados duplicados na importação e relatar os ignorados', async () => {
+    const response = await request(app)
+      .post('/api/guests/import')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({
+        guests: [
+          {
+            name: 'Convidado Lote 1', 
+            group: 'Padrinhos',
+            status: 'Confirmado',
+            email: 'novoemail@email.com',
+          },
+          {
+            name: 'Convidado Novo Exclusivo',
+            group: 'Família do noivo',
+            status: 'Confirmado',
+          },
+        ],
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body).toHaveProperty('count', 1); // Apenas 1 novo inserido
+    expect(response.body).toHaveProperty('skipped', 1); // 1 ignorado por duplicidade
+    expect(response.body.message).toContain('1 convidado(s) já existente(s) foram ignorados');
+  });
+
   it('deve retornar erro 400 ao tentar importar lote vazio ou formato inválido', async () => {
     const response = await request(app)
       .post('/api/guests/import')
@@ -198,7 +224,6 @@ describe('Guest Management & Import API Tests', () => {
   });
 
   it('deve retornar erro 400 ao tentar atualizar um convidado com dados inválidos', async () => {
-    // Cria um registro temporário válido para garantir que o ID exista e passe pelo findFirst
     const tempGuest = await request(app)
       .post('/api/guests')
       .set('Authorization', `Bearer ${authToken}`)
@@ -220,7 +245,6 @@ describe('Guest Management & Import API Tests', () => {
     expect(response.status).toBe(400);
     expect(response.body).toHaveProperty('error');
 
-    // Limpa o convidado temporário criado
     await request(app)
       .delete(`/api/guests/${tempId}`)
       .set('Authorization', `Bearer ${authToken}`);

@@ -52,7 +52,7 @@ export const importGuestService = async (userId: string, guests: GuestImportInpu
   }
 
   const errors: string[] = [];
-  const guestsData: {
+  const parsedGuests: {
     name: string;
     group: string;
     status: string;
@@ -88,7 +88,7 @@ export const importGuestService = async (userId: string, guests: GuestImportInpu
     }
     if (rowHasError) return;
 
-    guestsData.push({
+    parsedGuests.push({
       name: name.slice(0, 80),
       group,
       status,
@@ -103,11 +103,50 @@ export const importGuestService = async (userId: string, guests: GuestImportInpu
   }
 
   try {
-    const result = await prisma.guest.createMany({ data: guestsData });
+    const existingGuests = await prisma.guest.findMany({
+      where: { userId },
+      select: { email: true, name: true },
+    });
+
+    const existingEmails = new Set(
+      existingGuests.map((g) => g.email?.toLowerCase()).filter(Boolean)
+    );
+    const existingNames = new Set(existingGuests.map((g) => g.name.toLowerCase()));
+
+    const guestsToCreate: typeof parsedGuests = [];
+    let skippedCount = 0;
+
+    for (const item of parsedGuests) {
+      const emailKey = item.email ? item.email.toLowerCase() : null;
+      const nameKey = item.name.toLowerCase();
+
+      const isDuplicate =
+        (emailKey && existingEmails.has(emailKey)) || existingNames.has(nameKey);
+
+      if (isDuplicate) {
+        skippedCount++;
+      } else {
+        guestsToCreate.push(item);
+        if (emailKey) existingEmails.add(emailKey);
+        existingNames.add(nameKey);
+      }
+    }
+
+    let createdCount = 0;
+    if (guestsToCreate.length > 0) {
+      const result = await prisma.guest.createMany({ data: guestsToCreate });
+      createdCount = result.count;
+    }
+
+    let message = `${createdCount} convidado(s) importado(s) com sucesso.`;
+    if (skippedCount > 0) {
+      message += ` (${skippedCount} convidado(s) já existente(s) foram ignorados).`;
+    }
 
     return {
-      count: result.count,
-      message: `${result.count} convidado(s) importado(s) com sucesso.`,
+      count: createdCount,
+      skipped: skippedCount,
+      message,
     };
   } catch (dbError) {
     console.error('ERRO DETALHADO DO PRISMA NA IMPORTAÇÃO:', dbError);
