@@ -21,7 +21,6 @@ describe('FinanceiroPage Component', () => {
     { id: '2', title: 'Vestido da Noiva', category: 'Vestido da noiva', amount: 8000, dueDate: '2026-08-10T00:00:00.000Z', status: 'paid' },
   ]
 
-  // A página faz duas chamadas GET (categorias e despesas), então o mock responde por URL.
   const mockApiGet = () => {
     vi.mocked(api.get).mockImplementation((async (url: string) => {
       if (url === '/api/categories') return { data: mockCategories }

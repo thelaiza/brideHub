@@ -22,7 +22,7 @@ export interface Vendor {
   phone: string;
   status: 'Contratado' | 'Orçamento' | 'Pesquisando';
   cost: number;
-  email?: string
+  email?: string;
 }
 
 export interface Task {
@@ -33,4 +33,15 @@ export interface Task {
   status: 'todo' | 'doing' | 'done';
   completed?: boolean;
   dueDate: string;
+}
+
+export type GuestGroup = 'Família da noiva' | 'Família do noivo' | 'Amigos' | 'Padrinhos' | 'Fornecedores';
+export type GuestStatus = 'Confirmado' | 'Pendente' | 'Negado';
+export interface Guest {
+  id: string;
+  name: string;
+  group: GuestGroup;
+  status: GuestStatus;
+  email?: string;
+  phone?: string;
 }

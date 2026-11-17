@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, DollarSign, Users, CheckSquare, LogOut } from 'lucide-react';
+import { Home, DollarSign, Users, CheckSquare, UserCheck, LogOut } from 'lucide-react';
 import logoBrideHub from '../../assets/logo.png'; 
 
 interface SidebarProps {
@@ -14,6 +14,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange, onLog
     { id: 'financeiro', label: 'Financeiro', icon: DollarSign },
     { id: 'fornecedores', label: 'Fornecedores', icon: Users },
     { id: 'tarefas', label: 'Tarefas', icon: CheckSquare },
+    { id: 'convidados', label: 'Convidados', icon: UserCheck },
   ];
 
   return (

@@ -15,10 +15,11 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  expenses  Expense[]
-  vendors   Vendor[]
-  tasks     Task[]
-  wedding   Wedding?
+  expenses Expense[]
+  vendors  Vendor[]
+  tasks    Task[]
+  guests   Guest[]
+  wedding  Wedding?
 
   @@map("users")
 }
@@ -39,16 +40,16 @@ model Wedding {
 }
 
 model Expense {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   title     String
   category  String
   amount    Float
   dueDate   DateTime?
-  status    String   @default("pending") // pending, paid
+  status    String    @default("pending") // pending, paid
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@map("expenses")
 }
@@ -83,4 +84,19 @@ model Task {
   updatedAt   DateTime @updatedAt
 
   @@map("tasks")
+}
+
+model Guest {
+  id        String   @id @default(uuid())
+  name      String
+  group     String   @default("Amigos") // Família da noiva, Família do noivo, Padrinhos, Fornecedores, Amigos
+  status    String   @default("Pendente") // Pendente, Confirmado, Negado
+  email     String?
+  phone     String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("guests")
 }

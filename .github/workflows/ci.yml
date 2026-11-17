@@ -119,7 +119,7 @@ jobs:
         with:
           name: coverage-frontend
           path: frontend/coverage/lcov.info
-          if-no-files-found: ignore
+          if-no-files-found: error
 
   sonarcloud:
     name: SonarCloud Analysis
@@ -140,7 +140,6 @@ jobs:
           path: backend/coverage
 
       - name: Baixar cobertura do frontend
-        continue-on-error: true
         uses: actions/download-artifact@v5
         with:
           name: coverage-frontend
@@ -149,9 +148,7 @@ jobs:
       - name: Ajustar caminhos do lcov para a raiz do monorepo
         run: |
           sed -i 's#^SF:\([^/]\)#SF:backend/\1#' backend/coverage/lcov.info
-          if [ -f frontend/coverage/lcov.info ]; then
-            sed -i 's#^SF:\([^/]\)#SF:frontend/\1#' frontend/coverage/lcov.info
-          fi
+          sed -i 's#^SF:\([^/]\)#SF:frontend/\1#' frontend/coverage/lcov.info
 
       - name: SonarCloud Scan
         if: env.SONAR_TOKEN != ''

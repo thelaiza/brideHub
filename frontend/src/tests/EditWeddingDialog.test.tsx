@@ -30,7 +30,7 @@ describe('EditWeddingDialog Component', () => {
 
     render(
       <EditWeddingDialog initialData={mockInitialData} onSave={mockOnSave}>
-        <button>Editar Casamento</button>
+        <span>Editar Casamento</span>
       </EditWeddingDialog>
     )
 
@@ -54,7 +54,7 @@ describe('EditWeddingDialog Component', () => {
 
     render(
       <EditWeddingDialog initialData={mockInitialData} onSave={mockOnSave}>
-        <button>Editar Casamento</button>
+        <span>Editar Casamento</span>
       </EditWeddingDialog>
     )
 
@@ -74,7 +74,7 @@ describe('EditWeddingDialog Component', () => {
 
     render(
       <EditWeddingDialog initialData={mockInitialData} onSave={mockOnSave}>
-        <button>Editar Casamento</button>
+        <span>Editar Casamento</span>
       </EditWeddingDialog>
     )
 

@@ -80,4 +80,42 @@ describe('Auth API Tests', () => {
     expect(response.status).toBe(400);
     expect(response.body).toHaveProperty('error');
   });
+
+  it('deve retornar 401 se nenhum cabeçalho de autorização for fornecido', async () => {
+    const response = await request(app).get('/api/auth/me'); // Rota protegida por authMiddleware
+    expect(response.status).toBe(401);
+    expect(response.body).toEqual({ error: 'Token não fornecido.' });
+  });
+
+  it.each([
+    ['não começar com Bearer', 'Basic token123'],
+    ['estar vazio após o prefixo Bearer', 'Bearer   '],
+    ['ser um token JWT inválido ou falsificado', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.invalidtoken.signature']
+  ])('deve retornar 401 se o token %s', async (_, authHeader) => {
+    const response = await request(app)
+      .get('/api/auth/me')
+      .set('Authorization', authHeader);
+
+    expect(response.status).toBe(401);
+    expect(response.body).toHaveProperty('error');
+  });
+
+  it('deve retornar 401 se o token estiver vazio após o prefixo Bearer', async () => {
+    const response = await request(app)
+      .get('/api/auth/me')
+      .set('Authorization', 'Bearer   ');
+
+    expect(response.status).toBe(401);
+    expect(response.body).toEqual({ error: 'Token malformatado ou em formato inválido.' });
+  });
+
+  it('deve retornar 401 se o token JWT for inválido ou falsificado', async () => {
+    const response = await request(app)
+      .get('/api/auth/me')
+      .set('Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.invalidtoken.signature');
+
+    expect(response.status).toBe(401);
+    expect(response.body).toEqual({ error: 'Token inválido ou expirado.' });
+  });
+
 });
