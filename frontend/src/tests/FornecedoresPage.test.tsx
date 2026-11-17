@@ -21,7 +21,6 @@ describe('FornecedoresPage Component', () => {
     { id: '2', name: 'Foto Bella', category: 'Fotografia e Vídeo', phone: '47988888888', email: 'contato@foto.com', cost: 5000, status: 'Orçamento' },
   ]
 
-  // A página faz duas chamadas GET (categorias e fornecedores), então o mock responde por URL.
   const mockApiGet = () => {
     vi.mocked(api.get).mockImplementation((async (url: string) => {
       if (url === '/api/categories') return { data: mockCategories }

@@ -39,7 +39,7 @@ describe('Vendor Management API Tests', () => {
 
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body)).toBe(true);
-    expect(response.body.length).toBe(0);
+    expect(response.body).toHaveLength(0);
   });
 
   it('deve retornar erro 400 se tentar criar um fornecedor sem nome ou categoria', async () => {
