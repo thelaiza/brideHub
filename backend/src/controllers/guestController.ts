@@ -31,17 +31,17 @@ export const createGuest = async (req: AuthenticatedRequest, res: any) => {
 
     const { name, group, status, email, phone } = req.body;
 
-    if (!name) {
+    if (!name || typeof name !== 'string' || !name.trim()) {
       return res.status(400).json({ error: 'O nome do convidado é obrigatório.' });
     }
 
     const guest = await prisma.guest.create({
       data: {
-        name,
+        name: name.trim(),
         group: group || 'Amigos',
         status: status || 'Pendente',
-        email: email || null,
-        phone: phone || null,
+        email: email && email.trim() !== '' ? email.trim() : null,
+        phone: phone && phone.trim() !== '' ? phone.trim() : null,
         userId: userId as string,
       },
     });
@@ -72,11 +72,11 @@ export const updateGuest = async (req: AuthenticatedRequest, res: any) => {
     }
 
     const updateData: any = {};
-    if (name !== undefined) updateData.name = name;
+    if (name !== undefined) updateData.name = name.trim();
     if (group !== undefined) updateData.group = group;
     if (status !== undefined) updateData.status = status;
-    if (email !== undefined) updateData.email = email || null;
-    if (phone !== undefined) updateData.phone = phone || null;
+    if (email !== undefined) updateData.email = email && email.trim() !== '' ? email.trim() : null;
+    if (phone !== undefined) updateData.phone = phone && phone.trim() !== '' ? phone.trim() : null;
 
     const updatedGuest = await prisma.guest.update({
       where: { id },
@@ -132,11 +132,11 @@ export const importGuests = async (req: AuthenticatedRequest, res: any) => {
     }
 
     const guestsData = guests.map((g: any) => ({
-      name: g.name || 'Convidado',
+      name: g.name?.trim() || 'Convidado',
       group: g.group || 'Amigos',
       status: g.status || 'Pendente',
-      email: g.email || null,
-      phone: g.phone || null,
+      email: g.email && g.email.trim() !== '' ? g.email.trim() : null,
+      phone: g.phone && g.phone.trim() !== '' ? g.phone.trim() : null,
       userId: userId as string,
     }));
 

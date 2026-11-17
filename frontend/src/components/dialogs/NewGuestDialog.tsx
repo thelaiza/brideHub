@@ -15,18 +15,33 @@ export const NewGuestDialog: React.FC<Props> = ({ isOpen, onClose, onSave }) => 
   const [status, setStatus] = useState<GuestStatus>('Pendente');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.SyntheticEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
-    onSave({ name, group, status, email, phone });
-    setName('');
-    setGroup('Amigos');
-    setStatus('Pendente');
-    setEmail('');
-    setPhone('');
+    if (!name.trim() || submitting) return;
+    
+    try {
+      setSubmitting(true);
+      await onSave({ 
+        name: name.trim(), 
+        group, 
+        status, 
+        email: email.trim() || '', 
+        phone: phone.trim() || '' 
+      });
+      setName('');
+      setGroup('Amigos');
+      setStatus('Pendente');
+      setEmail('');
+      setPhone('');
+    } catch (error) {
+      console.error('Erro ao salvar convidado no dialog:', error);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -106,15 +121,17 @@ export const NewGuestDialog: React.FC<Props> = ({ isOpen, onClose, onSave }) => 
             <button 
               type="button" 
               onClick={onClose}
+              disabled={submitting}
               className="px-5 py-2.5 rounded-2xl text-sm font-semibold border border-border text-foreground hover:bg-muted transition cursor-pointer"
             >
               Cancelar
             </button>
             <button 
               type="submit"
-              className="px-5 py-2.5 rounded-2xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition shadow-md shadow-primary/20 cursor-pointer"
+              disabled={submitting}
+              className="px-5 py-2.5 rounded-2xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition shadow-md shadow-primary/20 cursor-pointer disabled:opacity-50"
             >
-              Adicionar
+              {submitting ? 'Salvando...' : 'Adicionar'}
             </button>
           </div>
         </form>

@@ -18,12 +18,15 @@ export function authMiddleware(req: AuthenticatedRequest, res: Response, next: N
     return res.status(401).json({ error: 'Token não fornecido.' });
   }
 
-  const match = authHeader.match(/^Bearer\s+(.+)$/i);
-  if (!match || !match[1]) {
+  if (!authHeader.toLowerCase().startsWith('bearer ')) {
     return res.status(401).json({ error: 'Token malformatado ou em formato inválido.' });
   }
 
-  const token = match[1];
+  const token = authHeader.substring(7).trim();
+
+  if (!token) {
+    return res.status(401).json({ error: 'Token malformatado ou em formato inválido.' });
+  }
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET as string) as unknown as { userId: string; email: string };
@@ -33,6 +36,7 @@ export function authMiddleware(req: AuthenticatedRequest, res: Response, next: N
 
     return next();
   } catch (error) {
+    console.error('Falha na validação do token JWT:', error);
     return res.status(401).json({ error: 'Token inválido ou expirado.' });
   }
 }

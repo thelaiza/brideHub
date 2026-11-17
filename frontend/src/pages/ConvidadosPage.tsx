@@ -261,7 +261,7 @@ export const ConvidadosPage: React.FC = () => {
         <div className="rounded-2xl border border-border bg-muted/60 px-4 py-3 text-sm text-foreground">{notice}</div>
       )}
 
-=      <section className="bg-card p-6 rounded-3xl border border-border shadow-sm">
+      <section className="bg-card p-6 rounded-3xl border border-border shadow-sm">
         <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
           <div>
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest block">Confirmação de Presença</span>
@@ -303,7 +303,7 @@ export const ConvidadosPage: React.FC = () => {
         </div>
       </section>
 
-=      <div className="bg-card p-4 rounded-3xl border border-border shadow-sm flex flex-col gap-4">
+      <div className="bg-card p-4 rounded-3xl border border-border shadow-sm flex flex-col gap-4">
         <div className="relative w-full">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
           <input 
@@ -332,7 +332,7 @@ export const ConvidadosPage: React.FC = () => {
         </div>
       </div>
 
-=      <div className="bg-card rounded-3xl border border-border shadow-sm overflow-hidden">
+      <div className="bg-card rounded-3xl border border-border shadow-sm overflow-hidden">
         <div className="hidden md:grid grid-cols-[2fr_1.3fr_1.8fr_auto_auto] gap-4 px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-border bg-muted/40">
           <div>Convidado</div>
           <div>Grupo</div>
