@@ -54,31 +54,32 @@ export const ConvidadosPage: React.FC = () => {
     return matchesGroup && matchesStatus && matchesSearch;
   });
 
-const handleAddGuest = async (newGuest: Omit<Guest, 'id'>): Promise<void> => {
-  try {
-    const response = await api.post('/api/guests', newGuest);
-    setGuests((prev) => [response.data, ...prev]);
-    setIsNewOpen(false);
-  } catch (error) {
-    console.error('Erro ao criar convidado:', error);
-    throw error; 
-  }
-};
+  const handleAddGuest = async (newGuest: Omit<Guest, 'id'>): Promise<void> => {
+    try {
+      const response = await api.post('/api/guests', newGuest);
+      setGuests((prev) => [response.data, ...prev]);
+      setIsNewOpen(false);
+    } catch (error) {
+      console.error('Erro ao criar convidado:', error);
+      throw error; 
+    }
+  };
 
-  const handleUpdateGuest = async (updatedGuest: Guest) => {
+  const handleUpdateGuest = async (updatedGuest: Guest): Promise<void> => {
     try {
       const response = await api.patch(`/api/guests/${updatedGuest.id}`, updatedGuest);
-      setGuests(guests.map((g) => (g.id === updatedGuest.id ? response.data : g)));
+      setGuests((prev) => prev.map((g) => (g.id === updatedGuest.id ? response.data : g)));
       setEditingGuest(null);
     } catch (error) {
       console.error('Erro ao atualizar convidado:', error);
+      throw error;
     }
   };
 
   const handleQuickStatusChange = async (id: string, newStatus: GuestStatus) => {
     try {
       const response = await api.patch(`/api/guests/${id}`, { status: newStatus });
-      setGuests(guests.map((g) => (g.id === id ? response.data : g)));
+      setGuests((prev) => prev.map((g) => (g.id === id ? response.data : g)));
     } catch (error) {
       console.error('Erro ao atualizar status do convidado:', error);
     }
@@ -88,7 +89,7 @@ const handleAddGuest = async (newGuest: Omit<Guest, 'id'>): Promise<void> => {
     if (!window.confirm("Tem certeza que deseja remover este convidado?")) return;
     try {
       await api.delete(`/api/guests/${id}`);
-      setGuests(guests.filter((g) => g.id !== id));
+      setGuests((prev) => prev.filter((g) => g.id !== id));
     } catch (error) {
       console.error('Erro ao deletar convidado:', error);
     }
@@ -140,7 +141,7 @@ const handleAddGuest = async (newGuest: Omit<Guest, 'id'>): Promise<void> => {
                   <button 
                     key={s} 
                     title={M.label} 
-                    onClick={() => handleQuickStatusChange(g.id, s)}
+                    onClick={() => void handleQuickStatusChange(g.id, s)}
                     className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold transition cursor-pointer ${on ? M.cls + " shadow-sm" : "border-transparent text-muted-foreground hover:bg-muted"}`}
                   >
                     <Icon size={12} />
@@ -159,7 +160,7 @@ const handleAddGuest = async (newGuest: Omit<Guest, 'id'>): Promise<void> => {
                 <Pencil size={16} />
               </button>
               <button 
-                onClick={() => handleDeleteGuest(g.id)} 
+                onClick={() => void handleDeleteGuest(g.id)} 
                 className="p-2 rounded-xl text-muted-foreground hover:text-red-500 hover:bg-muted transition-colors cursor-pointer"
                 title="Remover convidado"
               >

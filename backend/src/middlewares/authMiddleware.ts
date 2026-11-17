@@ -35,8 +35,11 @@ export function authMiddleware(req: AuthenticatedRequest, res: Response, next: N
     req.userEmail = decoded.email;
 
     return next();
-  } catch (error) {
-    console.error('Falha na validação do token JWT:', error);
+  } catch (error: any) {
+    // Só loga se não for um erro padrão de token expirado para evitar poluição nos logs de prod
+    if (error?.name !== 'TokenExpiredError') {
+      console.warn(`Aviso na validação do token: ${error?.name} - ${error?.message}`);
+    }
     return res.status(401).json({ error: 'Token inválido ou expirado.' });
   }
 }
