@@ -165,7 +165,7 @@ function resolveColumns(header: string[]): ColumnIndices {
   };
 }
 
-function validateMissingColumns(cols: ColumnIndices, header: string[]): string | null {
+function validateMissingColumns(cols: ColumnIndices): string | null {
   if (!cols.hasHeader) return null;
   const missingCols: string[] = [];
   if (cols.iGroup < 0) missingCols.push('grupo');
@@ -229,7 +229,7 @@ function buildGuests(rawRows: string[][]): { guests: ParsedGuest[]; errors: stri
 
   const header = rows[0].cells.map(key);
   const cols = resolveColumns(header);
-  const headerError = validateMissingColumns(cols, header);
+  const headerError = validateMissingColumns(cols);
   if (headerError) return { guests: [], errors: [headerError] };
 
   const guests: ParsedGuest[] = [];
