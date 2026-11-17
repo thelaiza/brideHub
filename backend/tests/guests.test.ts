@@ -196,4 +196,51 @@ describe('Guest Management & Import API Tests', () => {
 
     expect(response.status).toBe(404);
   });
+
+  it('deve retornar erro 400 ao tentar atualizar um convidado com dados inválidos', async () => {
+    // Cria um registro temporário válido para garantir que o ID exista e passe pelo findFirst
+    const tempGuest = await request(app)
+      .post('/api/guests')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({
+        name: 'Convidado Temp Validação',
+        group: 'Amigos',
+        status: 'Pendente',
+      });
+
+    const tempId = tempGuest.body.id;
+
+    const response = await request(app)
+      .patch(`/api/guests/${tempId}`)
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({
+        group: 'GrupoInvalido',
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toHaveProperty('error');
+
+    // Limpa o convidado temporário criado
+    await request(app)
+      .delete(`/api/guests/${tempId}`)
+      .set('Authorization', `Bearer ${authToken}`);
+  });
+
+  it('deve retornar erro 401 se o token JWT for inválido ou malformado no middleware', async () => {
+    const response = await request(app)
+      .get('/api/guests')
+      .set('Authorization', 'Bearer token_invalido_fake');
+
+    expect(response.status).toBe(401);
+    expect(response.body).toHaveProperty('error');
+  });
+
+  it('deve retornar erro 401 se o header Authorization não começar com Bearer', async () => {
+    const response = await request(app)
+      .get('/api/guests')
+      .set('Authorization', 'Basic 123456');
+
+    expect(response.status).toBe(401);
+    expect(response.body).toHaveProperty('error');
+  });
 });
