@@ -31,12 +31,18 @@ export function authMiddleware(req: AuthenticatedRequest, res: Response, next: N
   try {
     const decoded = jwt.verify(token, JWT_SECRET as string) as unknown as { userId: string; email: string };
     
+    if (!decoded?.userId) {
+      return res.status(401).json({ error: 'Token inválido ou payload ausente.' });
+    }
+
     req.userId = decoded.userId;
     req.userEmail = decoded.email;
 
     return next();
-  } catch (error) {
-    console.error('Falha na validação do token JWT:', error);
+  } catch (error: any) {
+    if (error?.name !== 'TokenExpiredError') {
+      console.warn(`Aviso na validação do token: ${error?.name} - ${error?.message}`);
+    }
     return res.status(401).json({ error: 'Token inválido ou expirado.' });
   }
 }

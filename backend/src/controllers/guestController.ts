@@ -45,6 +45,8 @@ export const createGuest = async (req: AuthenticatedRequest, res: any) => {
 
     const cleanGroup = clean(group) || 'Amigos';
     const cleanStatus = clean(status) || 'Pendente';
+    const cleanEmail = clean(email).slice(0, 120) || null;
+    const cleanPhone = clean(phone).slice(0, 30) || null;
 
     if (!(VALID_GROUPS as readonly string[]).includes(cleanGroup)) {
       return res.status(400).json({ error: 'Grupo inválido.' });
@@ -53,13 +55,22 @@ export const createGuest = async (req: AuthenticatedRequest, res: any) => {
       return res.status(400).json({ error: 'Status inválido.' });
     }
 
+    if (cleanEmail) {
+      const existingEmail = await prisma.guest.findFirst({
+        where: { userId, email: cleanEmail },
+      });
+      if (existingEmail) {
+        return res.status(400).json({ error: 'Já existe um convidado cadastrado com este e-mail.' });
+      }
+    }
+
     const guest = await prisma.guest.create({
       data: {
         name: cleanName.slice(0, 80),
         group: cleanGroup,
         status: cleanStatus,
-        email: clean(email).slice(0, 120) || null,
-        phone: clean(phone).slice(0, 30) || null,
+        email: cleanEmail,
+        phone: cleanPhone,
         userId,
       },
     });
@@ -79,14 +90,6 @@ export const updateGuest = async (req: AuthenticatedRequest, res: any) => {
 
     if (!userId) {
       return res.status(401).json({ error: 'Usuário não autenticado.' });
-    }
-
-    const existingGuest = await prisma.guest.findFirst({
-      where: { id, userId },
-    });
-
-    if (!existingGuest) {
-      return res.status(404).json({ error: 'Convidado não encontrado.' });
     }
 
     const updateData: Record<string, string | null> = {};
@@ -115,13 +118,33 @@ export const updateGuest = async (req: AuthenticatedRequest, res: any) => {
       updateData.status = cleanStatus;
     }
 
-    if (email !== undefined) updateData.email = clean(email).slice(0, 120) || null;
-    if (phone !== undefined) updateData.phone = clean(phone).slice(0, 30) || null;
+    if (email !== undefined) {
+      const cleanEmail = clean(email).slice(0, 120) || null;
+      if (cleanEmail) {
+        const existingEmail = await prisma.guest.findFirst({
+          where: { userId, email: cleanEmail, NOT: { id } },
+        });
+        if (existingEmail) {
+          return res.status(400).json({ error: 'Já existe outro convidado cadastrado com este e-mail.' });
+        }
+      }
+      updateData.email = cleanEmail;
+    }
 
-    const updatedGuest = await prisma.guest.update({
-      where: { id },
+    if (phone !== undefined) {
+      updateData.phone = clean(phone).slice(0, 30) || null;
+    }
+
+    const updateResult = await prisma.guest.updateMany({
+      where: { id, userId },
       data: updateData,
     });
+
+    if (updateResult.count === 0) {
+      return res.status(404).json({ error: 'Convidado não encontrado.' });
+    }
+
+    const updatedGuest = await prisma.guest.findUnique({ where: { id } });
 
     return res.json(updatedGuest);
   } catch (error) {
@@ -139,17 +162,13 @@ export const deleteGuest = async (req: AuthenticatedRequest, res: any) => {
       return res.status(401).json({ error: 'Usuário não autenticado.' });
     }
 
-    const existingGuest = await prisma.guest.findFirst({
+    const deleteResult = await prisma.guest.deleteMany({
       where: { id, userId },
     });
 
-    if (!existingGuest) {
+    if (deleteResult.count === 0) {
       return res.status(404).json({ error: 'Convidado não encontrado.' });
     }
-
-    await prisma.guest.delete({
-      where: { id },
-    });
 
     return res.status(204).send();
   } catch (error) {

@@ -59,6 +59,7 @@ export const importGuestService = async (userId: string, guests: GuestImportInpu
     email: string | null;
     phone: string | null;
     userId: string;
+    line: number;
   }[] = [];
 
   guests.forEach((g, index) => {
@@ -95,6 +96,7 @@ export const importGuestService = async (userId: string, guests: GuestImportInpu
       email: clean(g.email).slice(0, 120) || null,
       phone: clean(g.phone).slice(0, 30) || null,
       userId,
+      line,
     });
   });
 
@@ -105,30 +107,40 @@ export const importGuestService = async (userId: string, guests: GuestImportInpu
   try {
     const existingGuests = await prisma.guest.findMany({
       where: { userId },
-      select: { email: true, name: true },
+      select: { email: true, name: true, phone: true },
     });
 
     const existingEmails = new Set(
       existingGuests.map((g) => g.email?.toLowerCase()).filter(Boolean)
     );
-    const existingNames = new Set(existingGuests.map((g) => g.name.toLowerCase()));
+    const existingRecords = new Set(
+      existingGuests.map((g) => `${g.name.toLowerCase()}_${g.email?.toLowerCase() || g.phone || ''}`)
+    );
 
-    const guestsToCreate: typeof parsedGuests = [];
-    let skippedCount = 0;
+    const guestsToCreate: Omit<typeof parsedGuests[0], 'line'>[] = [];
+    const skippedLines: string[] = [];
 
     for (const item of parsedGuests) {
       const emailKey = item.email ? item.email.toLowerCase() : null;
       const nameKey = item.name.toLowerCase();
+      const compositeKey = `${nameKey}_${emailKey || item.phone || ''}`;
+      const isDuplicateByEmail = emailKey ? existingEmails.has(emailKey) : false;
+      const isDuplicateComposite = existingRecords.has(compositeKey);
 
-      const isDuplicate =
-        (emailKey && existingEmails.has(emailKey)) || existingNames.has(nameKey);
-
-      if (isDuplicate) {
-        skippedCount++;
+      if (isDuplicateByEmail || isDuplicateComposite) {
+        skippedLines.push(`Linha ${item.line} (${item.name})`);
       } else {
-        guestsToCreate.push(item);
+        guestsToCreate.push({
+          name: item.name,
+          group: item.group,
+          status: item.status,
+          email: item.email,
+          phone: item.phone,
+          userId: item.userId,
+        });
+
         if (emailKey) existingEmails.add(emailKey);
-        existingNames.add(nameKey);
+        existingRecords.add(compositeKey);
       }
     }
 
@@ -138,9 +150,10 @@ export const importGuestService = async (userId: string, guests: GuestImportInpu
       createdCount = result.count;
     }
 
+    const skippedCount = skippedLines.length;
     let message = `${createdCount} convidado(s) importado(s) com sucesso.`;
     if (skippedCount > 0) {
-      message += ` (${skippedCount} convidado(s) já existente(s) foram ignorados).`;
+      message += ` (${skippedCount} ignorado(s) por duplicidade: ${skippedLines.slice(0, 3).join(', ')}${skippedCount > 3 ? '...' : ''}).`;
     }
 
     return {

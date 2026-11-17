@@ -33,19 +33,27 @@ const key = (v: string): string =>
 
 function normalizeGroup(v: string): GuestGroup | null {
   const k = key(v);
-  if (k.includes('noiva')) return 'Família da noiva';
-  if (k.includes('noivo')) return 'Família do noivo';
+
+  if (k === key('Família da noiva')) return 'Família da noiva';
+  if (k === key('Família do noivo')) return 'Família do noivo';
+  if (k === key('Padrinhos')) return 'Padrinhos';
+  if (k === key('Fornecedores')) return 'Fornecedores';
+  if (k === key('Amigos')) return 'Amigos';
+
   if (k.includes('padrinho') || k.includes('madrinha')) return 'Padrinhos';
   if (k.includes('fornec')) return 'Fornecedores';
+  if (k.includes('noiva')) return 'Família da noiva';
+  if (k.includes('noivo')) return 'Família do noivo';
   if (k.includes('amig')) return 'Amigos';
+
   return null;
 }
 
 function normalizeStatus(v: string): GuestStatus | null {
   const k = key(v);
-  if (k.startsWith('conf') || k === 'sim') return 'Confirmado';
-  if (k.startsWith('neg') || k.startsWith('nao')) return 'Negado';
-  if (k.startsWith('pend')) return 'Pendente';
+  if (k === key('Confirmado') || k.startsWith('conf') || k === 'sim') return 'Confirmado';
+  if (k === key('Negado') || k.startsWith('neg') || k.startsWith('nao')) return 'Negado';
+  if (k === key('Pendente') || k.startsWith('pend')) return 'Pendente';
   return null;
 }
 
@@ -287,7 +295,7 @@ export const ImportGuestsDialog: React.FC<Props> = ({ isOpen, onClose, onImportS
         return;
       }
 
-      const response = await api.post('/api/guests/import', { guests });
+        const response = await api.post('/api/guests/import', { guests });
       onImportSuccess(
         response.data?.message ||
           `${guests.length} convidado(s) importado(s) com sucesso de "${file.name}".`
@@ -311,7 +319,7 @@ export const ImportGuestsDialog: React.FC<Props> = ({ isOpen, onClose, onImportS
             onClick={onClose}
             className="p-1.5 rounded-xl text-muted-foreground hover:bg-muted transition cursor-pointer"
           >
-            <X size={18} />
+            <X size= {18} />
           </button>
         </div>
 
