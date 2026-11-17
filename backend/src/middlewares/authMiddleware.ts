@@ -31,6 +31,10 @@ export function authMiddleware(req: AuthenticatedRequest, res: Response, next: N
   try {
     const decoded = jwt.verify(token, JWT_SECRET as string) as unknown as { userId: string; email: string };
     
+    if (!decoded?.userId) {
+      return res.status(401).json({ error: 'Token inválido ou payload ausente.' });
+    }
+
     req.userId = decoded.userId;
     req.userEmail = decoded.email;
 
