@@ -4,7 +4,7 @@ import type { Guest, GuestGroup, GuestStatus } from '../../types';
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (guest: Omit<Guest, 'id'>) => void;
+  onSave: (guest: Omit<Guest, 'id'>) => Promise<void> | void; 
 }
 
 const GUEST_GROUPS: GuestGroup[] = ['Família da noiva', 'Família do noivo', 'Amigos', 'Padrinhos', 'Fornecedores'];
