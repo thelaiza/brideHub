@@ -36,7 +36,6 @@ export function authMiddleware(req: AuthenticatedRequest, res: Response, next: N
 
     return next();
   } catch (error: any) {
-    // Só loga se não for um erro padrão de token expirado para evitar poluição nos logs de prod
     if (error?.name !== 'TokenExpiredError') {
       console.warn(`Aviso na validação do token: ${error?.name} - ${error?.message}`);
     }

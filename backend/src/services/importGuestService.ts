@@ -105,7 +105,6 @@ export const importGuestService = async (userId: string, guests: GuestImportInpu
   }
 
   try {
-    // Busca convidados existentes trazendo também o id/telefone para validação robusta
     const existingGuests = await prisma.guest.findMany({
       where: { userId },
       select: { email: true, name: true, phone: true },
@@ -114,7 +113,6 @@ export const importGuestService = async (userId: string, guests: GuestImportInpu
     const existingEmails = new Set(
       existingGuests.map((g) => g.email?.toLowerCase()).filter(Boolean)
     );
-    // Armazena combinações exatas de nome + e-mail ou nome + telefone para evitar falsos positivos de homônimos
     const existingRecords = new Set(
       existingGuests.map((g) => `${g.name.toLowerCase()}_${g.email?.toLowerCase() || g.phone || ''}`)
     );

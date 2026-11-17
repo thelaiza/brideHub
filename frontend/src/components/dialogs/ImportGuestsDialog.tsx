@@ -34,14 +34,12 @@ const key = (v: string): string =>
 function normalizeGroup(v: string): GuestGroup | null {
   const k = key(v);
 
-  // 1. Tenta o match exato primeiro com os nomes canônicos da lista fechada
   if (k === key('Família da noiva')) return 'Família da noiva';
   if (k === key('Família do noivo')) return 'Família do noivo';
   if (k === key('Padrinhos')) return 'Padrinhos';
   if (k === key('Fornecedores')) return 'Fornecedores';
   if (k === key('Amigos')) return 'Amigos';
 
-  // 2. Se não for exato, valida por aliases específicos priorizando termos mais compostos antes
   if (k.includes('padrinho') || k.includes('madrinha')) return 'Padrinhos';
   if (k.includes('fornec')) return 'Fornecedores';
   if (k.includes('noiva')) return 'Família da noiva';
