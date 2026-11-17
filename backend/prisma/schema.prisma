@@ -99,5 +99,6 @@ model Guest {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+  @@unique([userId, email])
   @@map("guests")
 }

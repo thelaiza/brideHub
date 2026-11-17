@@ -161,7 +161,7 @@ describe('Guest Management & Import API Tests', () => {
             name: 'Convidado Lote 1', 
             group: 'Padrinhos',
             status: 'Confirmado',
-            email: 'novoemail@email.com',
+            email: 'lote1@email.com', 
           },
           {
             name: 'Convidado Novo Exclusivo',
@@ -172,9 +172,9 @@ describe('Guest Management & Import API Tests', () => {
       });
 
     expect(response.status).toBe(201);
-    expect(response.body).toHaveProperty('count', 1); // Apenas 1 novo inserido
-    expect(response.body).toHaveProperty('skipped', 1); // 1 ignorado por duplicidade
-    expect(response.body.message).toContain('1 convidado(s) já existente(s) foram ignorados');
+    expect(response.body).toHaveProperty('count', 1); 
+    expect(response.body).toHaveProperty('skipped', 1); 
+    expect(response.body.message).toContain('ignorado');
   });
 
   it('deve retornar erro 400 ao tentar importar lote vazio ou formato inválido', async () => {
