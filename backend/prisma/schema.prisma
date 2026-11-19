@@ -8,12 +8,14 @@ generator client {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                   String    @id @default(uuid())
+  name                 String
+  email                String    @unique
+  password             String
+  resetPasswordToken   String?   @unique
+  resetPasswordExpires DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
   expenses Expense[]
   vendors  Vendor[]
@@ -23,7 +25,6 @@ model User {
 
   @@map("users")
 }
-
 model Wedding {
   id        String   @id @default(uuid())
   userId    String   @unique
