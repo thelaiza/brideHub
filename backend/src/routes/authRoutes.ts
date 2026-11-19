@@ -160,17 +160,17 @@ router.post('/auth/forgot-password', async (req, res) => {
     const user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
-      console.log(`[forgot-password] nenhum usuário com o e-mail: ${email}`);
+      console.log('[forgot-password] nenhum usuário encontrado para o e-mail informado.');
       return res.json(genericResponse);
     }
 
     // Conta criada pelo Google (password === ''): a senha é gerenciada pelo Google.
     if (!user.password) {
-      console.log(`[forgot-password] conta Google, enviando aviso para ${email}`);
+      console.log(`[forgot-password] conta Google (userId: ${user.id}), enviando aviso.`);
       try {
         await sendGoogleAccountEmail(user.email, user.name);
       } catch (emailError) {
-        console.error(`[forgot-password] falha ao enviar aviso para ${email}:`, emailError);
+        console.error(`[forgot-password] falha ao enviar aviso (userId: ${user.id}):`, emailError);
       }
       return res.json(genericResponse);
     }
@@ -187,14 +187,13 @@ router.post('/auth/forgot-password', async (req, res) => {
       },
     });
 
-    console.log(`[forgot-password] token gerado para ${email}, enviando e-mail...`);
+    console.log(`[forgot-password] token gerado (userId: ${user.id}), enviando e-mail...`);
 
     try {
       await sendPasswordResetEmail(user.email, user.name, rawToken);
-      console.log(`[forgot-password] e-mail enviado para ${email}`);
+      console.log(`[forgot-password] e-mail enviado (userId: ${user.id}).`);
     } catch (emailError) {
-      // Não revela ao cliente se o e-mail existe; o erro fica só no log do servidor.
-      console.error(`[forgot-password] falha ao enviar e-mail para ${email}:`, emailError);
+      console.error(`[forgot-password] falha ao enviar e-mail (userId: ${user.id}):`, emailError);
     }
 
     return res.json(genericResponse);
