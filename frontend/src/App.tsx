@@ -6,12 +6,25 @@ import { FornecedoresPage } from './pages/FornecedoresPage';
 import { TarefasPage } from './pages/TarefasPage';
 import { ConvidadosPage } from './pages/ConvidadosPage';
 import { LoginPage } from './pages/LoginPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { TOKEN_KEY } from './services/api';
+
+function extractResetToken(): string | null {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('token');
+  if (window.location.pathname === '/redefinir-senha' && token) {
+    window.history.replaceState({}, '', '/redefinir-senha');
+    return token;
+  }
+  return null;
+}
 
 export function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     return !!localStorage.getItem(TOKEN_KEY);
   });
+
+  const [resetToken, setResetToken] = useState<string | null>(() => extractResetToken());
 
   const [currentTab, setCurrentTab] = useState<string>(() => {
     return localStorage.getItem('currentTab') || 'dashboard';
@@ -45,6 +58,15 @@ export function App() {
     localStorage.removeItem('currentTab');
     setIsAuthenticated(false);
   };
+
+  const handleBackToLogin = () => {
+    window.history.replaceState({}, '', '/');
+    setResetToken(null);
+  };
+
+  if (resetToken) {
+    return <ResetPasswordPage token={resetToken} onBackToLogin={handleBackToLogin} />;
+  }
 
   if (!isAuthenticated) {
     return <LoginPage onLogin={handleLogin} />;
