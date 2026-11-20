@@ -131,13 +131,13 @@ describe('Auth API Tests', () => {
       expect(response.body.error).toBe('Nome, e-mail e senha são obrigatórios.');
     });
 
-    it('deve rejeitar senha com menos de 6 caracteres', async () => {
+    it('deve rejeitar senha com menos de 8 caracteres', async () => {
       const response = await request(app)
         .post('/api/auth/register')
-        .send({ name: 'Senha Curta', email: emailFor('short'), password: '123' });
+        .send({ name: 'Senha Curta', email: emailFor('short'), password: '1234567' });
 
       expect(response.status).toBe(400);
-      expect(response.body.error).toMatch(/pelo menos 6/);
+      expect(response.body.error).toMatch(/pelo menos 8/);
 
       const user = await prisma.user.findUnique({ where: { email: emailFor('short') } });
       expect(user).toBeNull();
@@ -173,7 +173,7 @@ describe('Auth API Tests', () => {
         .post('/api/auth/login')
         .send({
           email: createdEmail,
-          password: 'senhaerrada'
+          password: 'senhaerrada',
         });
 
       expect(response.status).toBe(400);
@@ -375,13 +375,13 @@ describe('Auth API Tests', () => {
       expect(response.body.error).toBe('Token e nova senha são obrigatórios.');
     });
 
-    it('deve rejeitar senha com menos de 6 caracteres', async () => {
+    it('deve rejeitar senha com menos de 8 caracteres', async () => {
       const response = await request(app)
         .post('/api/auth/reset-password')
-        .send({ token: 'qualquer', password: '123' });
+        .send({ token: 'qualquer', password: '1234567' });
 
       expect(response.status).toBe(400);
-      expect(response.body.error).toMatch(/pelo menos 6/);
+      expect(response.body.error).toMatch(/pelo menos 8/);
     });
 
     it('deve rejeitar token inexistente', async () => {
@@ -433,6 +433,7 @@ describe('Auth API Tests', () => {
       const updated = await prisma.user.findUnique({ where: { id: user.id } });
       expect(updated?.resetPasswordToken).toBeNull();
       expect(updated?.resetPasswordExpires).toBeNull();
+      expect(updated?.passwordChangedAt).not.toBeNull();
 
       const loginNew = await request(app)
         .post('/api/auth/login')

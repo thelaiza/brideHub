@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Heart, Lock, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { api } from '../services/api';
 
+export const MIN_PASSWORD_LENGTH = 8;
+
 interface ResetPasswordPageProps {
   token: string;
   onBackToLogin: () => void;
@@ -18,8 +20,8 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ token, onB
     e.preventDefault();
     setErrorMessage('');
 
-    if (password.length < 6) {
-      setErrorMessage('A nova senha deve ter pelo menos 6 caracteres.');
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setErrorMessage(`A nova senha deve ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres.`);
       return;
     }
 
@@ -101,10 +103,10 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ token, onB
                   id="new-password"
                   type="password"
                   required
-                  minLength={6}
+                  minLength={MIN_PASSWORD_LENGTH}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder={`Mínimo ${MIN_PASSWORD_LENGTH} caracteres`}
                   className="w-full pl-11 pr-4 py-3 bg-muted/50 border border-border rounded-2xl text-sm text-foreground focus:outline-none focus:border-ring transition-colors"
                 />
               </div>
@@ -123,7 +125,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ token, onB
                   id="confirm-password"
                   type="password"
                   required
-                  minLength={6}
+                  minLength={MIN_PASSWORD_LENGTH}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Repita a nova senha"

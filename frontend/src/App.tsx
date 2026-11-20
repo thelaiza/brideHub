@@ -13,6 +13,7 @@ function extractResetToken(): string | null {
   const params = new URLSearchParams(window.location.search);
   const token = params.get('token');
   if (window.location.pathname === '/redefinir-senha' && token) {
+    window.history.replaceState({}, '', '/redefinir-senha');
     return token;
   }
   return null;

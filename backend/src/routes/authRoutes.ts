@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
+import rateLimit from 'express-rate-limit';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'node:crypto';
@@ -21,7 +22,9 @@ if (!GOOGLE_CLIENT_ID) {
 
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
-const MIN_PASSWORD_LENGTH = 6;
+export const MIN_PASSWORD_LENGTH = 8;
+const RESET_TOKEN_TTL_MS = 30 * 60 * 1000; // 30 minutos
+const RESET_COOLDOWN_MS = 60 * 1000; // 1 minuto entre emissões de token
 
 const normalizeEmail = (value: unknown): string =>
   typeof value === 'string' ? value.trim().toLowerCase() : '';
@@ -30,6 +33,24 @@ const signToken = (user: { id: string; email: string }) =>
   jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, {
     expiresIn: '7d',
   });
+
+const forgotPasswordIpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Muitas solicitações de recuperação de senha. Tente novamente em alguns minutos.' },
+});
+
+const forgotPasswordEmailLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => normalizeEmail(req.body?.email) || 'missing-email',
+  validate: { keyGeneratorIpFallback: false },
+  message: { error: 'Muitas solicitações para este e-mail. Tente novamente mais tarde.' },
+});
 
 router.post('/auth/register', async (req, res) => {
   try {
@@ -62,7 +83,13 @@ router.post('/auth/register', async (req, res) => {
       },
     });
 
-    const { password: _, resetPasswordToken: __, resetPasswordExpires: ___, ...safeUser } = user;
+    const {
+      password: _,
+      resetPasswordToken: __,
+      resetPasswordExpires: ___,
+      passwordChangedAt: ____,
+      ...safeUser
+    } = user;
     return res.status(201).json(safeUser);
   } catch (error) {
     console.error('Erro ao registrar usuário:', error);
@@ -145,63 +172,72 @@ router.post('/auth/google', async (req, res) => {
   }
 });
 
-router.post('/auth/forgot-password', async (req, res) => {
-  try {
-    const email = normalizeEmail(req.body?.email);
-
-    if (!email) {
-      return res.status(400).json({ error: 'Informe o e-mail cadastrado.' });
-    }
-
-    const genericResponse = {
-      message: 'Se o e-mail estiver cadastrado, enviaremos um link para redefinição de senha.',
-    };
-
-    const user = await prisma.user.findUnique({ where: { email } });
-
-    if (!user) {
-      console.log('[forgot-password] nenhum usuário encontrado para o e-mail informado.');
-      return res.json(genericResponse);
-    }
-
-    // Conta criada pelo Google (password === ''): a senha é gerenciada pelo Google.
-    if (!user.password) {
-      console.log(`[forgot-password] conta Google (userId: ${user.id}), enviando aviso.`);
-      try {
-        await sendGoogleAccountEmail(user.email, user.name);
-      } catch (emailError) {
-        console.error(`[forgot-password] falha ao enviar aviso (userId: ${user.id}):`, emailError);
-      }
-      return res.json(genericResponse);
-    }
-
-    const rawToken = crypto.randomBytes(32).toString('hex');
-    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
-    const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutos
-
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        resetPasswordToken: hashedToken,
-        resetPasswordExpires: expiresAt,
-      },
-    });
-
-    console.log(`[forgot-password] token gerado (userId: ${user.id}), enviando e-mail...`);
-
+router.post(
+  '/auth/forgot-password',
+  forgotPasswordIpLimiter,
+  forgotPasswordEmailLimiter,
+  async (req, res) => {
     try {
-      await sendPasswordResetEmail(user.email, user.name, rawToken);
-      console.log(`[forgot-password] e-mail enviado (userId: ${user.id}).`);
-    } catch (emailError) {
-      console.error(`[forgot-password] falha ao enviar e-mail (userId: ${user.id}):`, emailError);
-    }
+      const email = normalizeEmail(req.body?.email);
 
-    return res.json(genericResponse);
-  } catch (error) {
-    console.error('Erro em forgot-password:', error);
-    return res.status(500).json({ error: 'Erro ao processar solicitação de redefinição de senha.' });
+      if (!email) {
+        return res.status(400).json({ error: 'Informe o e-mail cadastrado.' });
+      }
+
+      const genericResponse = {
+        message: 'Se o e-mail estiver cadastrado, enviaremos um link para redefinição de senha.',
+      };
+
+      const user = await prisma.user.findUnique({ where: { email } });
+
+      if (!user) {
+        return res.json(genericResponse);
+      }
+
+      if (!user.password) {
+        sendGoogleAccountEmail(user.email, user.name).catch((emailError) => {
+          console.error(`[forgot-password] falha ao enviar aviso (userId: ${user.id}):`, emailError);
+        });
+        return res.json(genericResponse);
+      }
+
+      const now = Date.now();
+      const existingTokenValid =
+        Boolean(user.resetPasswordToken) &&
+        Boolean(user.resetPasswordExpires) &&
+        user.resetPasswordExpires!.getTime() > now;
+
+      if (existingTokenValid && user.resetPasswordExpires) {
+        const remainingMs = user.resetPasswordExpires.getTime() - now;
+        const elapsedSinceIssueMs = RESET_TOKEN_TTL_MS - remainingMs;
+        if (elapsedSinceIssueMs < RESET_COOLDOWN_MS) {
+          return res.json(genericResponse);
+        }
+      }
+
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+      const expiresAt = new Date(now + RESET_TOKEN_TTL_MS);
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          resetPasswordToken: hashedToken,
+          resetPasswordExpires: expiresAt,
+        },
+      });
+
+      sendPasswordResetEmail(user.email, user.name, rawToken).catch((emailError) => {
+        console.error(`[forgot-password] falha ao enviar e-mail (userId: ${user.id}):`, emailError);
+      });
+
+      return res.json(genericResponse);
+    } catch (error) {
+      console.error('Erro em forgot-password:', error);
+      return res.status(500).json({ error: 'Erro ao processar solicitação de redefinição de senha.' });
+    }
   }
-});
+);
 
 router.post('/auth/reset-password', async (req, res) => {
   try {
@@ -241,6 +277,7 @@ router.post('/auth/reset-password', async (req, res) => {
         password: hashedPassword,
         resetPasswordToken: null,
         resetPasswordExpires: null,
+        passwordChangedAt: new Date(),
       },
     });
 

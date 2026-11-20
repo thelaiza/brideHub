@@ -21,7 +21,7 @@ describe('ResetPasswordPage Component', () => {
     password: string,
     confirm: string,
   ) => {
-    await user.type(screen.getByPlaceholderText('Mínimo 6 caracteres'), password)
+    await user.type(screen.getByPlaceholderText('Mínimo 8 caracteres'), password)
     await user.type(screen.getByPlaceholderText('Repita a nova senha'), confirm)
   }
 
@@ -33,24 +33,23 @@ describe('ResetPasswordPage Component', () => {
     renderPage()
 
     expect(screen.getByText('Criar nova senha')).toBeInTheDocument()
-    expect(screen.getByPlaceholderText('Mínimo 6 caracteres')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Mínimo 8 caracteres')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('Repita a nova senha')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /salvar nova senha/i })).toBeInTheDocument()
   })
 
-  it('deve exibir erro quando a senha tem menos de 6 caracteres', () => {
+  it('deve exibir erro quando a senha tem menos de 8 caracteres', () => {
     const { container } = renderPage()
 
-    fireEvent.change(screen.getByPlaceholderText('Mínimo 6 caracteres'), {
-      target: { value: '123' },
+    fireEvent.change(screen.getByPlaceholderText('Mínimo 8 caracteres'), {
+      target: { value: '1234567' },
     })
     fireEvent.change(screen.getByPlaceholderText('Repita a nova senha'), {
-      target: { value: '123' },
+      target: { value: '1234567' },
     })
-    // fireEvent.submit ignora a validação nativa do navegador (minLength)
     fireEvent.submit(container.querySelector('form') as HTMLFormElement)
 
-    expect(screen.getByText('A nova senha deve ter pelo menos 6 caracteres.')).toBeInTheDocument()
+    expect(screen.getByText('A nova senha deve ter pelo menos 8 caracteres.')).toBeInTheDocument()
     expect(api.post).not.toHaveBeenCalled()
   })
 
@@ -82,7 +81,7 @@ describe('ResetPasswordPage Component', () => {
       token: 'reset-token-123',
       password: 'novasenha123',
     })
-    expect(screen.queryByPlaceholderText('Mínimo 6 caracteres')).not.toBeInTheDocument()
+    expect(screen.queryByPlaceholderText('Mínimo 8 caracteres')).not.toBeInTheDocument()
   })
 
   it('deve exibir a mensagem de sucesso padrão quando a API não retorna mensagem', async () => {
@@ -122,7 +121,7 @@ describe('ResetPasswordPage Component', () => {
     expect(
       await screen.findByText('Link de redefinição inválido ou expirado.'),
     ).toBeInTheDocument()
-    expect(screen.getByPlaceholderText('Mínimo 6 caracteres')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Mínimo 8 caracteres')).toBeInTheDocument()
   })
 
   it('deve exibir a mensagem padrão quando o erro não vem da API', async () => {
