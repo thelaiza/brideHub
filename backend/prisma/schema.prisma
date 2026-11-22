@@ -22,6 +22,7 @@ model User {
   vendors  Vendor[]
   tasks    Task[]
   guests   Guest[]
+  tables   Table[]
   wedding  Wedding?
 
   @@map("users")
@@ -89,6 +90,20 @@ model Task {
   @@map("tasks")
 }
 
+model Table {
+  id        String   @id @default(uuid())
+  name      String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guests    Guest[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@unique([userId, name])
+  @@map("tables")
+}
+
 model Guest {
   id        String   @id @default(uuid())
   name      String
@@ -96,12 +111,16 @@ model Guest {
   status    String   @default("Pendente") // Pendente, Confirmado, Negado
   email     String?
   phone     String?
+  table     String?
+  tableId   String?
+  tableRef  Table?   @relation(fields: [tableId], references: [id], onDelete: SetNull)
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+  @@index([tableId])
   @@unique([userId, email])
   @@map("guests")
 }

@@ -1,6 +1,6 @@
 import React from 'react';
-import { Home, DollarSign, Users, CheckSquare, UserCheck, LogOut } from 'lucide-react';
-import logoBrideHub from '../../assets/logo.png'; 
+import { Home, DollarSign, Users, CheckSquare, UserCheck, Armchair, LogOut } from 'lucide-react';
+import logoBrideHub from '../../assets/logo.png';
 
 interface SidebarProps {
   currentTab: string;
@@ -15,6 +15,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange, onLog
     { id: 'fornecedores', label: 'Fornecedores', icon: Users },
     { id: 'tarefas', label: 'Tarefas', icon: CheckSquare },
     { id: 'convidados', label: 'Convidados', icon: UserCheck },
+    { id: 'mesas', label: 'Mesas', icon: Armchair },
   ];
 
   return (
@@ -51,7 +52,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange, onLog
       </nav>
 
       <div className="p-4 border-t border-slate-100">
-        <button 
+        <button
           onClick={onLogout}
           className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-colors cursor-pointer"
         >

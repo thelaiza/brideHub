@@ -5,6 +5,7 @@ import { FinanceiroPage } from './pages/FinanceiroPage';
 import { FornecedoresPage } from './pages/FornecedoresPage';
 import { TarefasPage } from './pages/TarefasPage';
 import { ConvidadosPage } from './pages/ConvidadosPage';
+import { MesasPage } from './pages/MesasPage';
 import { LoginPage } from './pages/LoginPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { TOKEN_KEY } from './services/api';
@@ -37,6 +38,7 @@ export function App() {
       fornecedores: 'Fornecedores — BrideHub',
       tarefas: 'Tarefas — BrideHub',
       convidados: 'Convidados — BrideHub',
+      mesas: 'Mesas — BrideHub',
     };
     document.title = titles[currentTab] || 'BrideHub — Organização de Casamento';
   }, [currentTab]);
@@ -83,6 +85,7 @@ export function App() {
       {currentTab === 'fornecedores' && <FornecedoresPage />}
       {currentTab === 'tarefas' && <TarefasPage />}
       {currentTab === 'convidados' && <ConvidadosPage />}
+      {currentTab === 'mesas' && <MesasPage />}
     </AppShell>
   );
 }

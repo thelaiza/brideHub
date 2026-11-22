@@ -37,6 +37,7 @@ export interface Task {
 
 export type GuestGroup = 'Família da noiva' | 'Família do noivo' | 'Amigos' | 'Padrinhos' | 'Fornecedores';
 export type GuestStatus = 'Confirmado' | 'Pendente' | 'Negado';
+
 export interface Guest {
   id: string;
   name: string;
@@ -44,4 +45,14 @@ export interface Guest {
   status: GuestStatus;
   email?: string;
   phone?: string;
+  table?: string | null;
+  tableId?: string | null;
+}
+
+export interface WeddingTable {
+  id: string;
+  name: string;
+  guests: Guest[];
+  createdAt?: string;
+  updatedAt?: string;
 }

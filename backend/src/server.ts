@@ -9,6 +9,7 @@ import dashboardRoutes from './routes/dashboardRoutes.js';
 import weddingRoutes from './routes/weddingRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
 import guestRoutes from './routes/guestRoutes.js';
+import tableRoutes from './routes/tableRoutes.js';
 import { client } from './services/metrics.service.js';
 import { metricsMiddleware } from './middlewares/metricsMiddleware.js';
 
@@ -41,6 +42,7 @@ app.use('/api', dashboardRoutes);
 app.use('/api', weddingRoutes);
 app.use('/api', categoryRoutes);
 app.use('/api', guestRoutes);
+app.use('/api', tableRoutes);
 
 app.get('/api/status', async (req, res) => {
   try {
