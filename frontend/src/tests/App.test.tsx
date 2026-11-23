@@ -20,7 +20,7 @@ vi.mock('../components/common/AppShell', () => ({
     onLogout: () => void
   }) => (
     <div data-testid="app-shell" data-tab={currentTab}>
-      {['dashboard', 'financeiro', 'fornecedores', 'tarefas', 'convidados'].map((tab) => (
+      {['dashboard', 'financeiro', 'fornecedores', 'tarefas', 'convidados', 'mesas'].map((tab) => (
         <button key={tab} type="button" onClick={() => onTabChange(tab)}>
           {`tab:${tab}`}
         </button>
@@ -53,6 +53,9 @@ vi.mock('../pages/TarefasPage', () => ({
 }))
 vi.mock('../pages/ConvidadosPage', () => ({
   ConvidadosPage: () => <div data-testid="convidados-page" />,
+}))
+vi.mock('../pages/MesasPage', () => ({
+  MesasPage: () => <div data-testid="mesas-page" />,
 }))
 
 vi.mock('../pages/LoginPage', () => ({
@@ -170,6 +173,7 @@ describe('App', () => {
       ['fornecedores', 'fornecedores-page', 'Fornecedores — BrideHub'],
       ['tarefas', 'tarefas-page', 'Tarefas — BrideHub'],
       ['convidados', 'convidados-page', 'Convidados — BrideHub'],
+      ['mesas', 'mesas-page', 'Mesas — BrideHub'],
     ])('deve abrir a aba %s, salvar a escolha e atualizar o título', async (tab, testId, title) => {
       const user = userEvent.setup()
       localStorage.setItem('currentTab', tab === 'dashboard' ? 'financeiro' : 'dashboard')
