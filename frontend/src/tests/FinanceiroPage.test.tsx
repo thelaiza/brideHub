@@ -17,8 +17,26 @@ describe('FinanceiroPage Component', () => {
   const mockCategories = ['Buffet', 'Vestido da noiva']
 
   const mockExpenses = [
-    { id: '1', title: 'Buffet Casamento', category: 'Buffet', amount: 15000, dueDate: '2026-10-04T00:00:00.000Z', status: 'pending' },
-    { id: '2', title: 'Vestido da Noiva', category: 'Vestido da noiva', amount: 8000, dueDate: '2026-08-10T00:00:00.000Z', status: 'paid' },
+    {
+      id: '1',
+      title: 'Buffet Casamento',
+      category: 'Buffet',
+      amount: 15000,
+      dueDate: '2026-10-04T00:00:00.000Z',
+      status: 'pending',
+      vendorId: 'v-1',
+      vendor: { id: 'v-1', name: 'Buffet Sabor & Arte', category: 'Buffet' },
+    },
+    {
+      id: '2',
+      title: 'Vestido da Noiva',
+      category: 'Vestido da noiva',
+      amount: 8000,
+      dueDate: '2026-08-10T00:00:00.000Z',
+      status: 'paid',
+      vendorId: null,
+      vendor: null,
+    },
   ]
 
   const mockApiGet = () => {
@@ -34,10 +52,11 @@ describe('FinanceiroPage Component', () => {
     mockApiGet()
   })
 
-  it('deve carregar e exibir a lista de despesas corretamente', async () => {
+  it('deve carregar e exibir a lista de despesas e o fornecedor vinculado quando houver', async () => {
     render(<FinanceiroPage />)
 
     expect(await screen.findByText('Buffet Casamento')).toBeInTheDocument()
+    expect(screen.getByText('Buffet Sabor & Arte')).toBeInTheDocument()
     expect(screen.getByText('Vestido da Noiva')).toBeInTheDocument()
     expect(screen.getByText('R$ 15.000,00')).toBeInTheDocument()
   })
@@ -51,7 +70,7 @@ describe('FinanceiroPage Component', () => {
     expect(api.get).toHaveBeenCalledWith('/api/expenses')
   })
 
-  it('deve filtrar despesas pelo campo de busca', async () => {
+  it('deve filtrar despesas pelo campo de busca (título, categoria ou fornecedor)', async () => {
     const user = userEvent.setup()
 
     render(<FinanceiroPage />)
@@ -59,8 +78,8 @@ describe('FinanceiroPage Component', () => {
     expect(await screen.findByText('Buffet Casamento')).toBeInTheDocument()
     expect(screen.getByText('Vestido da Noiva')).toBeInTheDocument()
 
-    const searchInput = screen.getByPlaceholderText('Buscar despesa ou categoria...')
-    await user.type(searchInput, 'Buffet')
+    const searchInput = screen.getByPlaceholderText('Buscar despesa, fornecedor ou categoria...')
+    await user.type(searchInput, 'Sabor & Arte')
 
     expect(screen.getByText('Buffet Casamento')).toBeInTheDocument()
     expect(screen.queryByText('Vestido da Noiva')).not.toBeInTheDocument()

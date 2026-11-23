@@ -2,7 +2,7 @@
 
 import request from 'supertest';
 import { PrismaClient } from '@prisma/client';
-import app from '../src/server.js'; 
+import app from '../src/server.js';
 import { createAuthUser } from './helpers/createAuthUser.js';
 
 const prisma = new PrismaClient();
@@ -11,16 +11,29 @@ describe('Expense Management API Tests', () => {
   let authToken = '';
   let userId = '';
   let expenseId = '';
+  let vendorId = '';
 
   beforeAll(async () => {
     const authData = await createAuthUser();
     userId = authData.userId;
     authToken = authData.authToken;
+
+    const vendor = await prisma.vendor.create({
+      data: {
+        name: 'Estúdio Luz & Cena',
+        category: 'Fotografia e Vídeo',
+        status: 'Contratado',
+        cost: 4500,
+        userId,
+      },
+    });
+    vendorId = vendor.id;
   });
 
   afterAll(async () => {
     if (userId) {
       await prisma.expense.deleteMany({ where: { userId } });
+      await prisma.vendor.deleteMany({ where: { userId } });
       await prisma.user.deleteMany({ where: { id: userId } });
     }
     await prisma.$disconnect();
@@ -38,7 +51,7 @@ describe('Expense Management API Tests', () => {
 
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body)).toBe(true);
-    expect(response.body.length).toBe(0);
+    expect(response.body).toHaveLength(0);
   });
 
   it('deve retornar erro 400 se tentar criar uma despesa sem campos obrigatórios', async () => {
@@ -46,14 +59,29 @@ describe('Expense Management API Tests', () => {
       .post('/api/expenses')
       .set('Authorization', `Bearer ${authToken}`)
       .send({
-        amount: -500
+        amount: -500,
       });
 
     expect(response.status).toBe(400);
     expect(response.body).toHaveProperty('error');
   });
 
-  it('deve criar uma nova despesa com sucesso', async () => {
+  it('deve retornar erro 400 se tentar vincular a um fornecedor inexistente ou de outro usuário', async () => {
+    const response = await request(app)
+      .post('/api/expenses')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({
+        title: 'Despesa Fornecedor Inválido',
+        amount: 1200,
+        category: 'Buffet',
+        vendorId: 'id-fornecedor-inexistente',
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toHaveProperty('error');
+  });
+
+  it('deve criar uma nova despesa vinculada a um fornecedor com sucesso', async () => {
     const response = await request(app)
       .post('/api/expenses')
       .set('Authorization', `Bearer ${authToken}`)
@@ -62,18 +90,21 @@ describe('Expense Management API Tests', () => {
         amount: 4500,
         category: 'Fotografia e Vídeo',
         dueDate: '2026-10-04T00:00:00.000Z',
-        status: 'Pendente'
+        status: 'Pendente',
+        vendorId,
       });
 
     expect(response.status).toBe(201);
     expect(response.body).toHaveProperty('id');
     expect(response.body.title).toBe('Fotógrafo Casamento');
     expect(response.body.amount).toBe(4500);
+    expect(response.body.vendorId).toBe(vendorId);
+    expect(response.body.vendor?.name).toBe('Estúdio Luz & Cena');
 
     expenseId = response.body.id;
   });
 
-  it('deve listar as despesas cadastradas do usuário', async () => {
+  it('deve listar as despesas cadastradas do usuário incluindo dados do fornecedor', async () => {
     const response = await request(app)
       .get('/api/expenses')
       .set('Authorization', `Bearer ${authToken}`);
@@ -81,6 +112,7 @@ describe('Expense Management API Tests', () => {
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body)).toBe(true);
     expect(response.body.length).toBeGreaterThan(0);
+    expect(response.body[0].vendor?.name).toBe('Estúdio Luz & Cena');
   });
 
   it('deve atualizar os dados de uma despesa existente', async () => {
@@ -89,7 +121,7 @@ describe('Expense Management API Tests', () => {
       .set('Authorization', `Bearer ${authToken}`)
       .send({
         amount: 4800,
-        status: 'Pago'
+        status: 'Pago',
       });
 
     expect(response.status).toBe(200);
@@ -97,12 +129,26 @@ describe('Expense Management API Tests', () => {
     expect(response.body.status).toBe('Pago');
   });
 
+  it('deve manter a despesa intacta e limpar vendorId se o fornecedor for excluído', async () => {
+    await prisma.vendor.delete({ where: { id: vendorId } });
+
+    const response = await request(app)
+      .get('/api/expenses')
+      .set('Authorization', `Bearer ${authToken}`);
+
+    expect(response.status).toBe(200);
+    const updatedExpense = response.body.find((item: any) => item.id === expenseId);
+    expect(updatedExpense).toBeDefined();
+    expect(updatedExpense.vendorId).toBeNull();
+    expect(updatedExpense.vendor).toBeNull();
+  });
+
   it('deve retornar erro 404 ao atualizar despesa inexistente', async () => {
     const response = await request(app)
       .patch('/api/expenses/id-falso-inexistente')
       .set('Authorization', `Bearer ${authToken}`)
       .send({
-        amount: 100
+        amount: 100,
       });
 
     expect(response.status).toBe(404);

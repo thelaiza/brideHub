@@ -3,6 +3,16 @@ import type { AuthenticatedRequest } from '../middlewares/authMiddleware.js';
 
 const prisma = new PrismaClient();
 
+const expensesInclude = {
+  expenses: {
+    select: {
+      id: true,
+      status: true,
+      amount: true,
+    },
+  },
+};
+
 export const getVendors = async (req: AuthenticatedRequest, res: any) => {
   try {
     const userId = req.userId;
@@ -12,6 +22,7 @@ export const getVendors = async (req: AuthenticatedRequest, res: any) => {
 
     const vendors = await prisma.vendor.findMany({
       where: { userId },
+      include: expensesInclude,
       orderBy: { createdAt: 'desc' },
     });
 
@@ -40,11 +51,12 @@ export const createVendor = async (req: AuthenticatedRequest, res: any) => {
         name,
         category,
         phone: phone || null,
-        email: email || null, 
+        email: email || null,
         status: status || 'Contratado',
         cost: cost !== undefined && cost !== '' ? Number(cost) : 0,
         userId: userId as string,
       },
+      include: expensesInclude,
     });
 
     return res.status(201).json(vendor);
@@ -76,13 +88,14 @@ export const updateVendor = async (req: AuthenticatedRequest, res: any) => {
     if (name !== undefined) updateData.name = name;
     if (category !== undefined) updateData.category = category;
     if (phone !== undefined) updateData.phone = phone;
-    if (email !== undefined) updateData.email = email; 
+    if (email !== undefined) updateData.email = email;
     if (status !== undefined) updateData.status = status;
     if (cost !== undefined) updateData.cost = Number(cost);
 
     const updatedVendor = await prisma.vendor.update({
       where: { id },
       data: updateData,
+      include: expensesInclude,
     });
 
     return res.json(updatedVendor);

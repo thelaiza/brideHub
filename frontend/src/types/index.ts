@@ -6,6 +6,12 @@ export interface WeddingSummary {
   spentAmount: number;
 }
 
+export interface ExpenseVendorSummary {
+  id: string;
+  name: string;
+  category?: string;
+}
+
 export interface Expense {
   id: string;
   title: string;
@@ -13,6 +19,14 @@ export interface Expense {
   amount: number;
   status: 'Pendente' | 'Pago';
   dueDate: string;
+  vendorId?: string | null;
+  vendor?: ExpenseVendorSummary | null;
+}
+
+export interface VendorExpenseSummary {
+  id: string;
+  status: string;
+  amount: number;
 }
 
 export interface Vendor {
@@ -23,6 +37,7 @@ export interface Vendor {
   status: 'Contratado' | 'Orçamento' | 'Pesquisando';
   cost: number;
   email?: string;
+  expenses?: VendorExpenseSummary[];
 }
 
 export interface Task {

@@ -17,8 +17,29 @@ describe('FornecedoresPage Component', () => {
   const mockCategories = ['Buffet', 'Fotografia e Vídeo']
 
   const mockVendors = [
-    { id: '1', name: 'Buffet Master', category: 'Buffet', phone: '47999999999', email: 'contato@buffet.com', cost: 12000, status: 'Contratado' },
-    { id: '2', name: 'Foto Bella', category: 'Fotografia e Vídeo', phone: '47988888888', email: 'contato@foto.com', cost: 5000, status: 'Orçamento' },
+    {
+      id: '1',
+      name: 'Buffet Master',
+      category: 'Buffet',
+      phone: '47999999999',
+      email: 'contato@buffet.com',
+      cost: 12000,
+      status: 'Contratado',
+      expenses: [
+        { id: 'e-1', status: 'paid', amount: 6000 },
+        { id: 'e-2', status: 'pending', amount: 6000 },
+      ],
+    },
+    {
+      id: '2',
+      name: 'Foto Bella',
+      category: 'Fotografia e Vídeo',
+      phone: '47988888888',
+      email: 'contato@foto.com',
+      cost: 5000,
+      status: 'Orçamento',
+      expenses: [],
+    },
   ]
 
   const mockApiGet = () => {
@@ -34,12 +55,14 @@ describe('FornecedoresPage Component', () => {
     mockApiGet()
   })
 
-  it('deve carregar e exibir a lista de fornecedores corretamente', async () => {
+  it('deve carregar e exibir a lista de fornecedores e o resumo de despesas vinculadas', async () => {
     render(<FornecedoresPage />)
 
     expect(await screen.findByText('Buffet Master')).toBeInTheDocument()
     expect(screen.getByText('Foto Bella')).toBeInTheDocument()
     expect(screen.getByText('R$ 12.000,00')).toBeInTheDocument()
+    expect(screen.getByText('2 despesas · 1 paga')).toBeInTheDocument()
+    expect(screen.getByText('Nenhuma despesa vinculada')).toBeInTheDocument()
   })
 
   it('deve carregar as categorias no filtro', async () => {

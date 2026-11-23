@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, DollarSign, Calendar, Tag, FileText } from 'lucide-react';
+import { X, DollarSign, Calendar, Tag, FileText, Store } from 'lucide-react';
 import { api } from '../../services/api';
-import type { Expense } from '../../types';
+import type { Expense, Vendor } from '../../types';
 
 interface EditExpenseDialogProps {
   isOpen: boolean;
@@ -22,6 +22,8 @@ export const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({ isOpen, on
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('');
   const [categories, setCategories] = useState<string[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [vendorId, setVendorId] = useState('');
   const [amount, setAmount] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [status, setStatus] = useState<'Pendente' | 'Pago'>('Pendente');
@@ -36,6 +38,12 @@ export const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({ isOpen, on
           setCategory((current) => current || list[0] || '');
         })
         .catch((err) => console.error('Erro ao carregar categorias:', err));
+
+      api.get('/api/vendors')
+        .then((res) => {
+          setVendors(res.data || []);
+        })
+        .catch((err) => console.error('Erro ao carregar fornecedores:', err));
     }
   }, [isOpen]);
 
@@ -45,13 +53,14 @@ export const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({ isOpen, on
       setCategory(expense.category || '');
       setAmount(expense.amount ? expense.amount.toString() : '');
       setDueDate(expense.dueDate ? expense.dueDate.split('T')[0] : '');
-      setStatus(toUiStatus(expense.status)); 
+      setStatus(toUiStatus(expense.status));
+      setVendorId(expense.vendorId || expense.vendor?.id || '');
     }
   }, [expense]);
 
   if (!isOpen) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!expense) return;
 
@@ -60,9 +69,10 @@ export const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({ isOpen, on
       const response = await api.patch(`/api/expenses/${expense.id}`, {
         title,
         category,
-        amount: parseFloat(amount) || 0,
+        amount: Number.parseFloat(amount) || 0,
         dueDate: dueDate || null,
-        status: toApiStatus(status), 
+        status: toApiStatus(status),
+        vendorId: vendorId || null,
       });
 
       onSave(response.data);
@@ -79,18 +89,29 @@ export const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({ isOpen, on
       <div className="bg-card rounded-3xl max-w-md w-full p-6 shadow-2xl border border-border space-y-6">
         <div className="flex justify-between items-center">
           <h3 className="text-xl font-bold text-foreground font-display">Editar Despesa</h3>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-muted text-muted-foreground transition-colors cursor-pointer">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fechar modal"
+            className="p-2 rounded-full hover:bg-muted text-muted-foreground transition-colors cursor-pointer"
+          >
             <X size={20} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Descrição</label>
+            <label
+              htmlFor="edit-expense-title"
+              className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5"
+            >
+              Descrição
+            </label>
             <div className="relative">
               <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-              <input 
-                type="text" 
+              <input
+                id="edit-expense-title"
+                type="text"
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -100,17 +121,51 @@ export const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({ isOpen, on
           </div>
 
           <div>
-            <label htmlFor="edit-expense-category" className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Categoria</label>
+            <label
+              htmlFor="edit-expense-category"
+              className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5"
+            >
+              Categoria
+            </label>
             <div className="relative">
               <Tag className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-              <select 
+              <select
                 id="edit-expense-category"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full pl-11 pr-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring text-foreground cursor-pointer"
               >
                 {categories.map((cat) => (
-                  <option key={cat} value={cat} className="bg-card text-foreground">{cat}</option>
+                  <option key={cat} value={cat} className="bg-card text-foreground">
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label
+              htmlFor="edit-expense-vendor"
+              className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5"
+            >
+              Fornecedor (opcional)
+            </label>
+            <div className="relative">
+              <Store className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+              <select
+                id="edit-expense-vendor"
+                value={vendorId}
+                onChange={(e) => setVendorId(e.target.value)}
+                className="w-full pl-11 pr-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring text-foreground cursor-pointer"
+              >
+                <option value="" className="bg-card text-foreground">
+                  Sem fornecedor específico
+                </option>
+                {vendors.map((vendor) => (
+                  <option key={vendor.id} value={vendor.id} className="bg-card text-foreground">
+                    {vendor.name}
+                  </option>
                 ))}
               </select>
             </div>
@@ -118,11 +173,17 @@ export const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({ isOpen, on
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Valor (R$)</label>
+              <label
+                htmlFor="edit-expense-amount"
+                className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5"
+              >
+                Valor (R$)
+              </label>
               <div className="relative">
                 <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-                <input 
-                  type="number" 
+                <input
+                  id="edit-expense-amount"
+                  type="number"
                   step="0.01"
                   required
                   value={amount}
@@ -133,11 +194,17 @@ export const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({ isOpen, on
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Vencimento</label>
+              <label
+                htmlFor="edit-expense-due-date"
+                className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5"
+              >
+                Vencimento
+              </label>
               <div className="relative">
                 <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-                <input 
-                  type="date" 
+                <input
+                  id="edit-expense-due-date"
+                  type="date"
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
                   className="w-full pl-11 pr-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring text-foreground"
@@ -147,26 +214,36 @@ export const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({ isOpen, on
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Status</label>
-            <select 
+            <label
+              htmlFor="edit-expense-status"
+              className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5"
+            >
+              Status
+            </label>
+            <select
+              id="edit-expense-status"
               value={status}
               onChange={(e) => setStatus(e.target.value as 'Pendente' | 'Pago')}
               className="w-full px-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring text-foreground cursor-pointer"
             >
-              <option value="Pendente" className="bg-card text-foreground">Pendente</option>
-              <option value="Pago" className="bg-card text-foreground">Pago</option>
+              <option value="Pendente" className="bg-card text-foreground">
+                Pendente
+              </option>
+              <option value="Pago" className="bg-card text-foreground">
+                Pago
+              </option>
             </select>
           </div>
 
           <div className="pt-4 flex gap-3 justify-end">
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={onClose}
               className="px-5 py-2.5 rounded-2xl border border-border text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             >
               Cancelar
             </button>
-            <button 
+            <button
               type="submit"
               disabled={loading}
               className="px-5 py-2.5 rounded-2xl bg-primary hover:bg-primary/90 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all cursor-pointer disabled:opacity-50"

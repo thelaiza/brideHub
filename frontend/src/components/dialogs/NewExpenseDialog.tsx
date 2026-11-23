@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, DollarSign, Calendar, Tag, FileText } from 'lucide-react';
+import { X, DollarSign, Calendar, Tag, FileText, Store } from 'lucide-react';
 import { api } from '../../services/api';
-import type { Expense } from '../../types';
+import type { Expense, Vendor } from '../../types';
 
 interface NewExpenseDialogProps {
   isOpen: boolean;
@@ -13,6 +13,8 @@ export const NewExpenseDialog: React.FC<NewExpenseDialogProps> = ({ isOpen, onCl
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('');
   const [categories, setCategories] = useState<string[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [vendorId, setVendorId] = useState('');
   const [amount, setAmount] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [status, setStatus] = useState<'Pendente' | 'Pago'>('Pendente');
@@ -26,20 +28,36 @@ export const NewExpenseDialog: React.FC<NewExpenseDialogProps> = ({ isOpen, onCl
           setCategory((current) => current || list[0] || '');
         })
         .catch((err) => console.error('Erro ao carregar categorias:', err));
+
+      api.get('/api/vendors')
+        .then((res) => {
+          setVendors(res.data || []);
+        })
+        .catch((err) => console.error('Erro ao carregar fornecedores:', err));
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const selectedVendor = vendors.find((v) => v.id === vendorId);
     onSave({
       title,
       category,
-      amount: parseFloat(amount) || 0,
+      amount: Number.parseFloat(amount) || 0,
       dueDate,
-      status
+      status,
+      vendorId: vendorId || null,
+      vendor: selectedVendor
+        ? { id: selectedVendor.id, name: selectedVendor.name, category: selectedVendor.category }
+        : null,
     });
+    setTitle('');
+    setAmount('');
+    setDueDate('');
+    setVendorId('');
+    setStatus('Pendente');
     onClose();
   };
 
@@ -48,22 +66,33 @@ export const NewExpenseDialog: React.FC<NewExpenseDialogProps> = ({ isOpen, onCl
       <div className="bg-card rounded-3xl max-w-md w-full p-6 shadow-2xl border border-border space-y-6">
         <div className="flex justify-between items-center">
           <h3 className="text-xl font-bold text-foreground font-display">Nova Despesa</h3>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fechar modal"
+            className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+          >
             <X size={20} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Descrição</label>
+            <label
+              htmlFor="new-expense-title"
+              className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5"
+            >
+              Descrição
+            </label>
             <div className="relative">
               <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-              <input 
-                type="text" 
+              <input
+                id="new-expense-title"
+                type="text"
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Ex: Sinal do Buffet" 
+                placeholder="Ex: Sinal do Buffet"
                 className="w-full pl-11 pr-4 py-3 bg-muted/50 border border-border rounded-2xl text-sm text-foreground focus:outline-none focus:border-ring"
               />
             </div>
@@ -71,46 +100,92 @@ export const NewExpenseDialog: React.FC<NewExpenseDialogProps> = ({ isOpen, onCl
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="new-expense-category" className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Categoria</label>
+              <label
+                htmlFor="new-expense-category"
+                className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5"
+              >
+                Categoria
+              </label>
               <div className="relative">
                 <Tag className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                <select 
+                <select
                   id="new-expense-category"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                   className="w-full pl-11 pr-4 py-3 bg-muted/50 border border-border rounded-2xl text-sm text-foreground focus:outline-none focus:border-ring appearance-none cursor-pointer"
                 >
                   {categories.map((cat) => (
-                    <option key={cat} value={cat} className="bg-card text-foreground">{cat}</option>
+                    <option key={cat} value={cat} className="bg-card text-foreground">
+                      {cat}
+                    </option>
                   ))}
                 </select>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Valor (R$)</label>
+              <label
+                htmlFor="new-expense-amount"
+                className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5"
+              >
+                Valor (R$)
+              </label>
               <div className="relative">
                 <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                <input 
-                  type="number" 
+                <input
+                  id="new-expense-amount"
+                  type="number"
                   step="0.01"
                   required
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  placeholder="0,00" 
+                  placeholder="0,00"
                   className="w-full pl-11 pr-4 py-3 bg-muted/50 border border-border rounded-2xl text-sm text-foreground focus:outline-none focus:border-ring"
                 />
               </div>
             </div>
           </div>
 
+          <div>
+            <label
+              htmlFor="new-expense-vendor"
+              className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5"
+            >
+              Fornecedor (opcional)
+            </label>
+            <div className="relative">
+              <Store className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+              <select
+                id="new-expense-vendor"
+                value={vendorId}
+                onChange={(e) => setVendorId(e.target.value)}
+                className="w-full pl-11 pr-4 py-3 bg-muted/50 border border-border rounded-2xl text-sm text-foreground focus:outline-none focus:border-ring appearance-none cursor-pointer"
+              >
+                <option value="" className="bg-card text-foreground">
+                  Sem fornecedor específico
+                </option>
+                {vendors.map((vendor) => (
+                  <option key={vendor.id} value={vendor.id} className="bg-card text-foreground">
+                    {vendor.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Vencimento</label>
+              <label
+                htmlFor="new-expense-due-date"
+                className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5"
+              >
+                Vencimento
+              </label>
               <div className="relative">
                 <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                <input 
-                  type="date" 
+                <input
+                  id="new-expense-due-date"
+                  type="date"
                   required
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
@@ -120,27 +195,37 @@ export const NewExpenseDialog: React.FC<NewExpenseDialogProps> = ({ isOpen, onCl
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Status</label>
-              <select 
+              <label
+                htmlFor="new-expense-status"
+                className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5"
+              >
+                Status
+              </label>
+              <select
+                id="new-expense-status"
                 value={status}
                 onChange={(e) => setStatus(e.target.value as 'Pendente' | 'Pago')}
                 className="w-full px-4 py-3 bg-muted/50 border border-border rounded-2xl text-sm text-foreground focus:outline-none focus:border-ring cursor-pointer"
               >
-                <option value="Pendente" className="bg-card text-foreground">Pendente</option>
-                <option value="Pago" className="bg-card text-foreground">Pago</option>
+                <option value="Pendente" className="bg-card text-foreground">
+                  Pendente
+                </option>
+                <option value="Pago" className="bg-card text-foreground">
+                  Pago
+                </option>
               </select>
             </div>
           </div>
 
           <div className="pt-4 flex gap-3 justify-end">
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={onClose}
               className="px-5 py-2.5 rounded-2xl border border-border text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
             >
               Cancelar
             </button>
-            <button 
+            <button
               type="submit"
               className="px-5 py-2.5 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold shadow-lg shadow-primary/20 transition-all cursor-pointer"
             >

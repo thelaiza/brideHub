@@ -2,7 +2,7 @@
 
 import request from 'supertest';
 import { PrismaClient } from '@prisma/client';
-import app from '../src/server.js'; 
+import app from '../src/server.js';
 import { createAuthUser } from './helpers/createAuthUser.js';
 
 const prisma = new PrismaClient();
@@ -20,6 +20,7 @@ describe('Vendor Management API Tests', () => {
 
   afterAll(async () => {
     if (userId) {
+      await prisma.expense.deleteMany({ where: { userId } });
       await prisma.vendor.deleteMany({ where: { userId } });
       await prisma.user.deleteMany({ where: { id: userId } });
     }
@@ -48,14 +49,14 @@ describe('Vendor Management API Tests', () => {
       .set('Authorization', `Bearer ${authToken}`)
       .send({
         phone: '47988887777',
-        cost: 1000
+        cost: 1000,
       });
 
     expect(response.status).toBe(400);
     expect(response.body).toHaveProperty('error');
   });
 
-  it('deve criar um novo fornecedor com sucesso incluindo o e-mail', async () => {
+  it('deve criar um novo fornecedor com sucesso incluindo o e-mail e lista de despesas inicial', async () => {
     const response = await request(app)
       .post('/api/vendors')
       .set('Authorization', `Bearer ${authToken}`)
@@ -65,18 +66,31 @@ describe('Vendor Management API Tests', () => {
         phone: '47988887777',
         email: 'contato@saborarte.com',
         cost: 15000,
-        status: 'Contratado'
+        status: 'Contratado',
       });
 
     expect(response.status).toBe(201);
     expect(response.body).toHaveProperty('id');
     expect(response.body.name).toBe('Buffet Sabor & Arte');
     expect(response.body.email).toBe('contato@saborarte.com');
-    
+    expect(Array.isArray(response.body.expenses)).toBe(true);
+    expect(response.body.expenses).toHaveLength(0);
+
     vendorId = response.body.id;
   });
 
-  it('deve listar os fornecedores do usuário autenticado', async () => {
+  it('deve listar os fornecedores do usuário autenticado incluindo despesas vinculadas', async () => {
+    await prisma.expense.create({
+      data: {
+        title: 'Entrada Buffet',
+        category: 'Buffet',
+        amount: 5000,
+        status: 'paid',
+        vendorId,
+        userId,
+      },
+    });
+
     const response = await request(app)
       .get('/api/vendors')
       .set('Authorization', `Bearer ${authToken}`);
@@ -85,20 +99,24 @@ describe('Vendor Management API Tests', () => {
     expect(Array.isArray(response.body)).toBe(true);
     expect(response.body.length).toBeGreaterThan(0);
     expect(response.body[0]).toHaveProperty('email');
+    expect(Array.isArray(response.body[0].expenses)).toBe(true);
+    expect(response.body[0].expenses).toHaveLength(1);
+    expect(response.body[0].expenses[0].status).toBe('paid');
   });
 
-  it('deve atualizar o e-mail e os dados do fornecedor existente', async () => {
+  it('deve atualizar o e-mail e os dados do fornecedor existente mantendo expenses', async () => {
     const response = await request(app)
       .patch(`/api/vendors/${vendorId}`)
       .set('Authorization', `Bearer ${authToken}`)
       .send({
         email: 'novoemail@saborarte.com',
-        cost: 16000
+        cost: 16000,
       });
 
     expect(response.status).toBe(200);
     expect(response.body.email).toBe('novoemail@saborarte.com');
     expect(response.body.cost).toBe(16000);
+    expect(Array.isArray(response.body.expenses)).toBe(true);
   });
 
   it('deve retornar erro 404 ao tentar atualizar um fornecedor inexistente', async () => {
@@ -106,7 +124,7 @@ describe('Vendor Management API Tests', () => {
       .patch('/api/vendors/id-falso-inexistente')
       .set('Authorization', `Bearer ${authToken}`)
       .send({
-        name: 'Teste Inexistente'
+        name: 'Teste Inexistente',
       });
 
     expect(response.status).toBe(404);
