@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { X, DollarSign, Calendar, Tag, FileText, Store } from 'lucide-react';
 import { api } from '../../services/api';
-import type { Expense, Vendor } from '../../types';
+import {
+  ExpenseDialogShell,
+  ExpenseFormFields,
+  EMPTY_EXPENSE_FORM,
+  useExpenseFormOptions,
+  type ExpenseFormValues,
+  type ExpenseUiStatus,
+} from './ExpenseFormShared';
+import type { Expense } from '../../types';
 
 interface EditExpenseDialogProps {
   isOpen: boolean;
@@ -10,55 +17,30 @@ interface EditExpenseDialogProps {
   onSave: (updatedExpense: Expense) => void;
 }
 
-const toUiStatus = (apiStatus?: string): 'Pendente' | 'Pago' => {
-  return apiStatus === 'paid' ? 'Pago' : 'Pendente';
-};
+const toUiStatus = (apiStatus?: string): ExpenseUiStatus => (apiStatus === 'paid' ? 'Pago' : 'Pendente');
 
-const toApiStatus = (uiStatus: 'Pendente' | 'Pago'): 'pending' | 'paid' => {
-  return uiStatus === 'Pago' ? 'paid' : 'pending';
-};
+const toApiStatus = (uiStatus: ExpenseUiStatus): 'pending' | 'paid' => (uiStatus === 'Pago' ? 'paid' : 'pending');
 
 export const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({ isOpen, onClose, expense, onSave }) => {
-  const [title, setTitle] = useState('');
-  const [category, setCategory] = useState('');
-  const [categories, setCategories] = useState<string[]>([]);
-  const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [vendorId, setVendorId] = useState('');
-  const [amount, setAmount] = useState('');
-  const [dueDate, setDueDate] = useState('');
-  const [status, setStatus] = useState<'Pendente' | 'Pago'>('Pendente');
+  const [values, setValues] = useState<ExpenseFormValues>(EMPTY_EXPENSE_FORM);
   const [loading, setLoading] = useState(false);
+  const { categories, vendors } = useExpenseFormOptions(isOpen);
 
   useEffect(() => {
-    if (isOpen) {
-      api.get('/api/categories')
-        .then((res) => {
-          const list: string[] = res.data || [];
-          setCategories(list);
-          setCategory((current) => current || list[0] || '');
-        })
-        .catch((err) => console.error('Erro ao carregar categorias:', err));
-
-      api.get('/api/vendors')
-        .then((res) => {
-          setVendors(res.data || []);
-        })
-        .catch((err) => console.error('Erro ao carregar fornecedores:', err));
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (expense) {
-      setTitle(expense.title || '');
-      setCategory(expense.category || '');
-      setAmount(expense.amount ? expense.amount.toString() : '');
-      setDueDate(expense.dueDate ? expense.dueDate.split('T')[0] : '');
-      setStatus(toUiStatus(expense.status));
-      setVendorId(expense.vendorId || expense.vendor?.id || '');
-    }
+    if (!expense) return;
+    setValues({
+      title: expense.title || '',
+      category: expense.category || '',
+      amount: expense.amount ? expense.amount.toString() : '',
+      dueDate: expense.dueDate ? expense.dueDate.split('T')[0] : '',
+      status: toUiStatus(expense.status),
+      vendorId: expense.vendorId || expense.vendor?.id || '',
+    });
   }, [expense]);
 
   if (!isOpen) return null;
+
+  const category = values.category || categories[0] || '';
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -67,12 +49,12 @@ export const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({ isOpen, on
     setLoading(true);
     try {
       const response = await api.patch(`/api/expenses/${expense.id}`, {
-        title,
+        title: values.title,
         category,
-        amount: Number.parseFloat(amount) || 0,
-        dueDate: dueDate || null,
-        status: toApiStatus(status),
-        vendorId: vendorId || null,
+        amount: Number.parseFloat(values.amount) || 0,
+        dueDate: values.dueDate || null,
+        status: toApiStatus(values.status),
+        vendorId: values.vendorId || null,
       });
 
       onSave(response.data);
@@ -85,174 +67,20 @@ export const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({ isOpen, on
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-fade-in">
-      <div className="bg-card rounded-3xl max-w-md w-full p-6 shadow-2xl border border-border space-y-6">
-        <div className="flex justify-between items-center">
-          <h3 className="text-xl font-bold text-foreground font-display">Editar Despesa</h3>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Fechar modal"
-            className="p-2 rounded-full hover:bg-muted text-muted-foreground transition-colors cursor-pointer"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label
-              htmlFor="edit-expense-title"
-              className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5"
-            >
-              Descrição
-            </label>
-            <div className="relative">
-              <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-              <input
-                id="edit-expense-title"
-                type="text"
-                required
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full pl-11 pr-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring text-foreground"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label
-              htmlFor="edit-expense-category"
-              className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5"
-            >
-              Categoria
-            </label>
-            <div className="relative">
-              <Tag className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-              <select
-                id="edit-expense-category"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full pl-11 pr-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring text-foreground cursor-pointer"
-              >
-                {categories.map((cat) => (
-                  <option key={cat} value={cat} className="bg-card text-foreground">
-                    {cat}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label
-              htmlFor="edit-expense-vendor"
-              className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5"
-            >
-              Fornecedor (opcional)
-            </label>
-            <div className="relative">
-              <Store className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-              <select
-                id="edit-expense-vendor"
-                value={vendorId}
-                onChange={(e) => setVendorId(e.target.value)}
-                className="w-full pl-11 pr-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring text-foreground cursor-pointer"
-              >
-                <option value="" className="bg-card text-foreground">
-                  Sem fornecedor específico
-                </option>
-                {vendors.map((vendor) => (
-                  <option key={vendor.id} value={vendor.id} className="bg-card text-foreground">
-                    {vendor.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label
-                htmlFor="edit-expense-amount"
-                className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5"
-              >
-                Valor (R$)
-              </label>
-              <div className="relative">
-                <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-                <input
-                  id="edit-expense-amount"
-                  type="number"
-                  step="0.01"
-                  required
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring text-foreground"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label
-                htmlFor="edit-expense-due-date"
-                className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5"
-              >
-                Vencimento
-              </label>
-              <div className="relative">
-                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-                <input
-                  id="edit-expense-due-date"
-                  type="date"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring text-foreground"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label
-              htmlFor="edit-expense-status"
-              className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5"
-            >
-              Status
-            </label>
-            <select
-              id="edit-expense-status"
-              value={status}
-              onChange={(e) => setStatus(e.target.value as 'Pendente' | 'Pago')}
-              className="w-full px-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring text-foreground cursor-pointer"
-            >
-              <option value="Pendente" className="bg-card text-foreground">
-                Pendente
-              </option>
-              <option value="Pago" className="bg-card text-foreground">
-                Pago
-              </option>
-            </select>
-          </div>
-
-          <div className="pt-4 flex gap-3 justify-end">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-5 py-2.5 rounded-2xl border border-border text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-5 py-2.5 rounded-2xl bg-primary hover:bg-primary/90 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all cursor-pointer disabled:opacity-50"
-            >
-              {loading ? 'Salvando...' : 'Salvar Alterações'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <ExpenseDialogShell
+      title="Editar Despesa"
+      submitLabel="Salvar Alterações"
+      loading={loading}
+      onClose={onClose}
+      onSubmit={handleSubmit}
+    >
+      <ExpenseFormFields
+        idPrefix="edit-expense"
+        values={{ ...values, category }}
+        categories={categories}
+        vendors={vendors}
+        onChange={(patch) => setValues((prev) => ({ ...prev, ...patch }))}
+      />
+    </ExpenseDialogShell>
   );
 };

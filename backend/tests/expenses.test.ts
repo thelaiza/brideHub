@@ -81,6 +81,39 @@ describe('Expense Management API Tests', () => {
     expect(response.body).toHaveProperty('error');
   });
 
+  it('deve retornar erro 400 se vendorId não for string', async () => {
+    const response = await request(app)
+      .post('/api/expenses')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({
+        title: 'Despesa Tipo Inválido',
+        amount: 800,
+        category: 'Buffet',
+        vendorId: { invalid: true },
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toHaveProperty('error');
+  });
+
+  it('deve tratar vendorId em branco como sem fornecedor ao criar despesa', async () => {
+    const response = await request(app)
+      .post('/api/expenses')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({
+        title: 'Despesa Avulsa Espaços',
+        amount: 300,
+        category: 'Buffet',
+        vendorId: '   ',
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.vendorId).toBeNull();
+    expect(response.body.vendor).toBeNull();
+
+    await prisma.expense.delete({ where: { id: response.body.id } });
+  });
+
   it('deve criar uma nova despesa vinculada a um fornecedor com sucesso', async () => {
     const response = await request(app)
       .post('/api/expenses')
@@ -115,21 +148,29 @@ describe('Expense Management API Tests', () => {
     expect(response.body[0].vendor?.name).toBe('Estúdio Luz & Cena');
   });
 
-  it('deve atualizar os dados de uma despesa existente', async () => {
+  it('deve atualizar os dados de uma despesa existente e permitir desvincular fornecedor', async () => {
     const response = await request(app)
       .patch(`/api/expenses/${expenseId}`)
       .set('Authorization', `Bearer ${authToken}`)
       .send({
         amount: 4800,
         status: 'Pago',
+        vendorId: null,
       });
 
     expect(response.status).toBe(200);
     expect(response.body.amount).toBe(4800);
     expect(response.body.status).toBe('Pago');
+    expect(response.body.vendorId).toBeNull();
+    expect(response.body.vendor).toBeNull();
   });
 
   it('deve manter a despesa intacta e limpar vendorId se o fornecedor for excluído', async () => {
+    await prisma.expense.update({
+      where: { id: expenseId },
+      data: { vendorId },
+    });
+
     await prisma.vendor.delete({ where: { id: vendorId } });
 
     const response = await request(app)
