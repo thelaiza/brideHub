@@ -17,12 +17,12 @@ export const updateWedding = async (req: AuthenticatedRequest, res: any) => {
     }
 
     const parsedBudget = Number(budget);
-    if (isNaN(parsedBudget) || parsedBudget < 0) {
+    if (Number.isNaN(parsedBudget) || parsedBudget < 0) {
       return res.status(400).json({ error: 'O orçamento deve ser um valor numérico válido.' });
     }
 
     const parsedDate = new Date(date);
-    if (isNaN(parsedDate.getTime())) {
+    if (Number.isNaN(parsedDate.getTime())) {
       return res.status(400).json({ error: 'Data do casamento inválida.' });
     }
 
