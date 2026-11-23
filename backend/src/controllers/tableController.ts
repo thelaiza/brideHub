@@ -3,6 +3,23 @@ import type { AuthenticatedRequest } from '../middlewares/authMiddleware.js';
 
 const prisma = new PrismaClient();
 
+const formatGuestWithTableResponse = async (guestId: string, res: any) => {
+  const updatedGuest = await prisma.guest.findUnique({
+    where: { id: guestId },
+    include: { tableRef: true },
+  });
+
+  if (!updatedGuest) {
+    return res.status(404).json({ error: 'Convidado não encontrado.' });
+  }
+
+  const { tableRef, ...guestWithoutRef } = updatedGuest;
+  return res.json({
+    ...guestWithoutRef,
+    table: tableRef?.name ?? null,
+  });
+};
+
 export const getTables = async (req: AuthenticatedRequest, res: any) => {
   try {
     const userId = req.userId;
@@ -148,20 +165,7 @@ export const assignGuestToTable = async (req: AuthenticatedRequest, res: any) =>
       });
     }
 
-    const updatedGuest = await prisma.guest.findUnique({
-      where: { id: guestId },
-      include: { tableRef: true },
-    });
-
-    if (!updatedGuest) {
-      return res.status(404).json({ error: 'Convidado não encontrado.' });
-    }
-
-    const { tableRef, ...guestWithoutRef } = updatedGuest;
-    return res.json({
-      ...guestWithoutRef,
-      table: tableRef?.name ?? null,
-    });
+    return await formatGuestWithTableResponse(guestId, res);
   } catch (error) {
     console.error('ERRO AO ADICIONAR CONVIDADO NA MESA:', error);
     return res.status(500).json({ error: 'Erro ao adicionar convidado na mesa.' });
@@ -195,20 +199,7 @@ export const removeGuestFromTable = async (req: AuthenticatedRequest, res: any) 
       return res.status(404).json({ error: 'Convidado não encontrado nesta mesa.' });
     }
 
-    const updatedGuest = await prisma.guest.findUnique({
-      where: { id: guestId },
-      include: { tableRef: true },
-    });
-
-    if (!updatedGuest) {
-      return res.status(404).json({ error: 'Convidado não encontrado.' });
-    }
-
-    const { tableRef, ...guestWithoutRef } = updatedGuest;
-    return res.json({
-      ...guestWithoutRef,
-      table: tableRef?.name ?? null,
-    });
+    return await formatGuestWithTableResponse(guestId, res);
   } catch (error) {
     console.error('ERRO AO REMOVER CONVIDADO DA MESA:', error);
     return res.status(500).json({ error: 'Erro ao remover convidado da mesa.' });
