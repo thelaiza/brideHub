@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Heart, User, Mail, Lock, ArrowLeft } from 'lucide-react';
+import { User, Mail, Lock, ArrowLeft } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
 import { api, TOKEN_KEY } from '../services/api';
+import logoBrideHub from '../assets/logo.png';
 
 interface LoginPageProps {
   onLogin: (token?: string) => void;
@@ -90,7 +91,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     }
   };
 
-  let headingTitle = 'Bem-vinda de volta';
+  let headingTitle = 'Bem-vinda ao BrideHub!';
   let headingSubtitle = 'Entre para continuar organizando o seu grande dia.';
   let submitLabel = 'Entrar';
 
@@ -163,9 +164,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     >
       <div className="bg-card/80 backdrop-blur-xl border border-border/60 shadow-2xl rounded-3xl w-full max-w-md p-8 sm:p-10 space-y-8 animate-fade-in">
         <div className="text-center space-y-3">
-          <div className="mx-auto size-12 rounded-2xl bg-primary text-primary-foreground grid place-items-center shadow-lg shadow-primary/20">
-            <Heart className="size-6 fill-current" />
-          </div>
+          <img
+            src={logoBrideHub}
+            alt="BrideHub Logo"
+            className="mx-auto size-16 object-contain"
+          />
           <h1 className="text-2xl font-bold tracking-tight text-foreground font-display">BrideHub</h1>
           <div className="space-y-1">
             <h2 className="text-xl font-semibold text-foreground font-display">{headingTitle}</h2>

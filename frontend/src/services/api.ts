@@ -19,12 +19,10 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
-      if (localStorage.getItem(TOKEN_KEY)) {
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem('currentTab');
-        window.location.href = '/';
-      }
+    if (error.response?.status === 401 && localStorage.getItem(TOKEN_KEY)) {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem('currentTab');
+      window.location.href = '/';
     }
     return Promise.reject(error);
   }

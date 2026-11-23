@@ -5,6 +5,20 @@ import { EditTaskDialog } from '../components/dialogs/EditTaskDialog';
 import type { Task } from '../types';
 import { api } from '../services/api';
 
+type TaskStatus = 'todo' | 'doing' | 'done';
+
+const getStatusColorClass = (status: Task['status']): string => {
+  if (status === 'done') return 'text-emerald-600 font-medium';
+  if (status === 'doing') return 'text-blue-600 font-medium';
+  return 'text-amber-600 font-medium';
+};
+
+const getStatusLabel = (status: Task['status']): string => {
+  if (status === 'done') return 'Concluído';
+  if (status === 'doing') return 'Em andamento';
+  return 'Pendente';
+};
+
 export const TarefasPage: React.FC = () => {
   const [isTaskOpen, setIsTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -24,7 +38,7 @@ export const TarefasPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchTasks();
+    void fetchTasks();
   }, []);
 
   useEffect(() => {
@@ -50,7 +64,7 @@ export const TarefasPage: React.FC = () => {
   };
 
   const handleUpdateTask = (updatedTask: Task) => {
-    setTasks(tasks.map(t => t.id === updatedTask.id ? updatedTask : t));
+    setTasks(tasks.map((t) => (t.id === updatedTask.id ? updatedTask : t)));
     setEditingTask(null);
   };
 
@@ -60,24 +74,24 @@ export const TarefasPage: React.FC = () => {
 
     try {
       await api.delete(`/api/tasks/${id}`);
-      setTasks(tasks.filter(t => t.id !== id));
+      setTasks(tasks.filter((t) => t.id !== id));
       setActiveMenuId(null);
     } catch (error) {
       console.error('Erro ao deletar tarefa:', error);
     }
   };
 
-  const handleDropTask = async (targetStatus: 'todo' | 'doing' | 'done', e: React.DragEvent) => {
+  const handleDropTask = async (targetStatus: TaskStatus, e: React.DragEvent) => {
     e.preventDefault();
     const taskId = e.dataTransfer.getData('text/plain');
     if (!taskId) return;
 
-    const task = tasks.find(t => t.id === taskId);
+    const task = tasks.find((t) => t.id === taskId);
     if (!task || task.status === targetStatus) return;
 
     const isCompleted = targetStatus === 'done';
 
-    const updatedTasks = tasks.map(t => 
+    const updatedTasks = tasks.map((t) =>
       t.id === taskId ? { ...t, status: targetStatus, completed: isCompleted } : t
     );
     setTasks(updatedTasks);
@@ -89,22 +103,18 @@ export const TarefasPage: React.FC = () => {
       });
     } catch (error) {
       console.error('Erro ao atualizar status da tarefa:', error);
-      fetchTasks();
+      void fetchTasks();
     }
   };
 
   const renderTaskCard = (task: Task) => {
     const isMenuOpen = activeMenuId === task.id;
-
-    const statusColorClass = task.status === 'done' 
-      ? 'text-emerald-600 font-medium' 
-      : task.status === 'doing' 
-      ? 'text-blue-600 font-medium' 
-      : 'text-amber-600 font-medium';
+    const statusColorClass = getStatusColorClass(task.status);
+    const statusLabel = getStatusLabel(task.status);
 
     return (
-      <div 
-        key={task.id} 
+      <div
+        key={task.id}
         draggable
         onDragStart={(e) => {
           e.dataTransfer.setData('text/plain', task.id);
@@ -117,7 +127,8 @@ export const TarefasPage: React.FC = () => {
           </span>
 
           <div className="relative">
-            <button 
+            <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 setActiveMenuId(isMenuOpen ? null : task.id);
@@ -131,6 +142,7 @@ export const TarefasPage: React.FC = () => {
             {isMenuOpen && (
               <div className="absolute right-0 top-7 w-36 bg-card border border-border rounded-xl shadow-xl z-20 py-1.5 animate-fade-in">
                 <button
+                  type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     setEditingTask(task);
@@ -142,7 +154,10 @@ export const TarefasPage: React.FC = () => {
                   Editar tarefa
                 </button>
                 <button
-                  onClick={(e) => handleDeleteTask(task.id, e)}
+                  type="button"
+                  onClick={(e) => {
+                    void handleDeleteTask(task.id, e);
+                  }}
                   className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer text-left"
                 >
                   <Trash2 size={14} />
@@ -153,15 +168,22 @@ export const TarefasPage: React.FC = () => {
           </div>
         </div>
 
-        <p className={`text-sm font-semibold text-foreground ${task.status === 'done' ? 'line-through text-muted-foreground' : ''}`}>
+        <p
+          className={`text-sm font-semibold text-foreground ${
+            task.status === 'done' ? 'line-through text-muted-foreground' : ''
+          }`}
+        >
           {task.title}
         </p>
 
         <div className="flex justify-between items-center text-xs text-muted-foreground pt-2 border-t border-border">
-          <span>Vencimento: {task.dueDate ? new Date(task.dueDate.split('T')[0] + 'T00:00:00').toLocaleDateString('pt-BR') : 'Sem data'}</span>
-          <span className={statusColorClass}>
-            {task.status === 'done' ? 'Concluído' : task.status === 'doing' ? 'Em andamento' : 'Pendente'}
+          <span>
+            Vencimento:{' '}
+            {task.dueDate
+              ? new Date(`${task.dueDate.split('T')[0]}T00:00:00`).toLocaleDateString('pt-BR')
+              : 'Sem data'}
           </span>
+          <span className={statusColorClass}>{statusLabel}</span>
         </div>
       </div>
     );
@@ -171,10 +193,15 @@ export const TarefasPage: React.FC = () => {
     <div className="space-y-8 animate-fade-in">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h3 className="text-2xl font-bold tracking-tight text-foreground font-display">Quadro de Tarefas</h3>
-          <p className="text-sm text-muted-foreground mt-1">Organize o fluxo de preparativos do casamento por etapas e prioridades.</p>
+          <h3 className="text-2xl font-bold tracking-tight text-foreground font-display">
+            Quadro de Tarefas
+          </h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Organize o fluxo de preparativos do casamento por etapas e prioridades.
+          </p>
         </div>
-        <button 
+        <button
+          type="button"
           onClick={() => setIsTaskOpen(true)}
           className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-5 py-3 rounded-2xl shadow-lg shadow-primary/20 flex items-center gap-2 transition-all cursor-pointer"
         >
@@ -186,9 +213,11 @@ export const TarefasPage: React.FC = () => {
         <div className="py-12 text-center text-muted-foreground">Carregando tarefas...</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-          <div 
+          <div
             onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => handleDropTask('todo', e)}
+            onDrop={(e) => {
+              void handleDropTask('todo', e);
+            }}
             className="bg-muted/70 p-4 rounded-3xl border border-border space-y-4 min-h-[350px]"
           >
             <div className="flex items-center justify-between px-2">
@@ -197,21 +226,25 @@ export const TarefasPage: React.FC = () => {
                 <h4 className="font-bold text-foreground text-sm">Pendentes</h4>
               </div>
               <span className="w-6 h-6 rounded-full bg-muted text-foreground flex items-center justify-center text-xs font-bold">
-                {tasks.filter(t => t.status === 'todo').length}
+                {tasks.filter((t) => t.status === 'todo').length}
               </span>
             </div>
             <div className="space-y-3">
-              {tasks.filter(t => t.status === 'todo').length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-4">Nenhuma tarefa pendente.</p>
+              {tasks.filter((t) => t.status === 'todo').length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-4">
+                  Nenhuma tarefa pendente.
+                </p>
               ) : (
-                tasks.filter(t => t.status === 'todo').map(renderTaskCard)
+                tasks.filter((t) => t.status === 'todo').map(renderTaskCard)
               )}
             </div>
           </div>
 
-          <div 
+          <div
             onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => handleDropTask('doing', e)}
+            onDrop={(e) => {
+              void handleDropTask('doing', e);
+            }}
             className="bg-muted/70 p-4 rounded-3xl border border-border space-y-4 min-h-[350px]"
           >
             <div className="flex items-center justify-between px-2">
@@ -220,21 +253,25 @@ export const TarefasPage: React.FC = () => {
                 <h4 className="font-bold text-foreground text-sm">Em Andamento</h4>
               </div>
               <span className="w-6 h-6 rounded-full bg-muted text-foreground flex items-center justify-center text-xs font-bold">
-                {tasks.filter(t => t.status === 'doing').length}
+                {tasks.filter((t) => t.status === 'doing').length}
               </span>
             </div>
             <div className="space-y-3">
-              {tasks.filter(t => t.status === 'doing').length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-4">Nenhuma tarefa em andamento.</p>
+              {tasks.filter((t) => t.status === 'doing').length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-4">
+                  Nenhuma tarefa em andamento.
+                </p>
               ) : (
-                tasks.filter(t => t.status === 'doing').map(renderTaskCard)
+                tasks.filter((t) => t.status === 'doing').map(renderTaskCard)
               )}
             </div>
           </div>
 
-          <div 
+          <div
             onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => handleDropTask('done', e)}
+            onDrop={(e) => {
+              void handleDropTask('done', e);
+            }}
             className="bg-muted/70 p-4 rounded-3xl border border-border space-y-4 min-h-[350px]"
           >
             <div className="flex items-center justify-between px-2">
@@ -243,27 +280,29 @@ export const TarefasPage: React.FC = () => {
                 <h4 className="font-bold text-foreground text-sm">Concluído</h4>
               </div>
               <span className="w-6 h-6 rounded-full bg-muted text-foreground flex items-center justify-center text-xs font-bold">
-                {tasks.filter(t => t.status === 'done').length}
+                {tasks.filter((t) => t.status === 'done').length}
               </span>
             </div>
             <div className="space-y-3">
-              {tasks.filter(t => t.status === 'done').length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-4">Nenhuma tarefa concluída.</p>
+              {tasks.filter((t) => t.status === 'done').length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-4">
+                  Nenhuma tarefa concluída.
+                </p>
               ) : (
-                tasks.filter(t => t.status === 'done').map(renderTaskCard)
+                tasks.filter((t) => t.status === 'done').map(renderTaskCard)
               )}
             </div>
           </div>
         </div>
       )}
 
-      <NewTaskDialog 
+      <NewTaskDialog
         isOpen={isTaskOpen}
         onClose={() => setIsTaskOpen(false)}
         onSave={handleAddTask}
       />
 
-      <EditTaskDialog 
+      <EditTaskDialog
         isOpen={!!editingTask}
         task={editingTask}
         onClose={() => setEditingTask(null)}

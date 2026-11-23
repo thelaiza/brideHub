@@ -9,14 +9,16 @@ interface NewVendorDialogProps {
   onSave: (vendor: Omit<Vendor, 'id'>) => void;
 }
 
+type VendorStatus = 'Contratado' | 'Orçamento' | 'Pesquisando';
+
 export const NewVendorDialog: React.FC<NewVendorDialogProps> = ({ isOpen, onClose, onSave }) => {
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [categories, setCategories] = useState<string[]>([]);
   const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState(''); 
+  const [email, setEmail] = useState('');
   const [cost, setCost] = useState('');
-  const [status, setStatus] = useState<'Contratado' | 'Orçamento' | 'Pesquisando'>('Orçamento');
+  const [status, setStatus] = useState<VendorStatus>('Orçamento');
 
   useEffect(() => {
     if (isOpen) {
@@ -32,15 +34,15 @@ export const NewVendorDialog: React.FC<NewVendorDialogProps> = ({ isOpen, onClos
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     onSave({
       name,
       category,
       phone,
-      email, 
-      cost: parseFloat(cost) || 0,
-      status
+      email,
+      cost: Number.parseFloat(cost) || 0,
+      status,
     });
     onClose();
   };
@@ -50,22 +52,33 @@ export const NewVendorDialog: React.FC<NewVendorDialogProps> = ({ isOpen, onClos
       <div className="bg-card rounded-3xl max-w-md w-full p-6 shadow-2xl border border-border space-y-6">
         <div className="flex justify-between items-center">
           <h3 className="text-xl font-bold text-foreground font-display">Novo Fornecedor</h3>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-muted text-muted-foreground transition-colors cursor-pointer">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fechar modal"
+            className="p-2 rounded-full hover:bg-muted text-muted-foreground transition-colors cursor-pointer"
+          >
             <X size={20} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Nome da Empresa / Profissional</label>
+            <label
+              htmlFor="new-vendor-name"
+              className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5"
+            >
+              Nome da Empresa / Profissional
+            </label>
             <div className="relative">
               <Users className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-              <input 
-                type="text" 
+              <input
+                id="new-vendor-name"
+                type="text"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Ex: Boulevard Eventos" 
+                placeholder="Ex: Boulevard Eventos"
                 className="w-full pl-11 pr-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring text-foreground"
               />
             </div>
@@ -73,33 +86,46 @@ export const NewVendorDialog: React.FC<NewVendorDialogProps> = ({ isOpen, onClos
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="new-vendor-category" className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Categoria</label>
+              <label
+                htmlFor="new-vendor-category"
+                className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5"
+              >
+                Categoria
+              </label>
               <div className="relative">
                 <Tag className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                <select 
+                <select
                   id="new-vendor-category"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                   className="w-full pl-11 pr-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring text-foreground cursor-pointer appearance-none"
                 >
                   {categories.map((cat) => (
-                    <option key={cat} value={cat} className="bg-card text-foreground">{cat}</option>
+                    <option key={cat} value={cat} className="bg-card text-foreground">
+                      {cat}
+                    </option>
                   ))}
                 </select>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Custo Estimado</label>
+              <label
+                htmlFor="new-vendor-cost"
+                className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5"
+              >
+                Custo Estimado
+              </label>
               <div className="relative">
                 <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                <input 
-                  type="number" 
+                <input
+                  id="new-vendor-cost"
+                  type="number"
                   step="0.01"
                   required
                   value={cost}
                   onChange={(e) => setCost(e.target.value)}
-                  placeholder="0,00" 
+                  placeholder="0,00"
                   className="w-full pl-11 pr-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring text-foreground"
                 />
               </div>
@@ -108,24 +134,36 @@ export const NewVendorDialog: React.FC<NewVendorDialogProps> = ({ isOpen, onClos
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Telefone</label>
+              <label
+                htmlFor="new-vendor-phone"
+                className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5"
+              >
+                Telefone
+              </label>
               <div className="relative">
                 <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                <input 
-                  type="text" 
+                <input
+                  id="new-vendor-phone"
+                  type="text"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="(47) 99999-9999" 
+                  placeholder="(47) 99999-9999"
                   className="w-full pl-11 pr-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring text-foreground"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Status</label>
-              <select 
+              <label
+                htmlFor="new-vendor-status"
+                className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5"
+              >
+                Status
+              </label>
+              <select
+                id="new-vendor-status"
                 value={status}
-                onChange={(e) => setStatus(e.target.value as any)}
+                onChange={(e) => setStatus(e.target.value as VendorStatus)}
                 className="w-full px-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring text-foreground cursor-pointer"
               >
                 <option value="Orçamento" className="bg-card text-foreground">Orçamento</option>
@@ -136,28 +174,34 @@ export const NewVendorDialog: React.FC<NewVendorDialogProps> = ({ isOpen, onClos
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">E-mail</label>
+            <label
+              htmlFor="new-vendor-email"
+              className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5"
+            >
+              E-mail
+            </label>
             <div className="relative">
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-              <input 
-                type="email" 
+              <input
+                id="new-vendor-email"
+                type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="contato@fornecedor.com" 
+                placeholder="contato@fornecedor.com"
                 className="w-full pl-11 pr-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring text-foreground"
               />
             </div>
           </div>
 
           <div className="pt-4 flex gap-3 justify-end">
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={onClose}
               className="px-5 py-2.5 rounded-2xl border border-border text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             >
               Cancelar
             </button>
-            <button 
+            <button
               type="submit"
               className="px-5 py-2.5 rounded-2xl bg-primary hover:bg-primary/90 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all cursor-pointer"
             >

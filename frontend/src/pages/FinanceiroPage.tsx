@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, CheckCircle2, Clock, X, Trash2, Pencil } from 'lucide-react';
+import { Plus, Search, Filter, CheckCircle2, Clock, X, Trash2, Pencil, Store } from 'lucide-react';
 import { NewExpenseDialog } from '../components/dialogs/NewExpenseDialog';
 import { EditExpenseDialog } from '../components/dialogs/EditExpenseDialog';
 import type { Expense } from '../types';
@@ -36,7 +36,7 @@ export const FinanceiroPage: React.FC = () => {
       const response = await api.get('/api/expenses');
       const mappedExpenses = (response.data || []).map((exp: any) => ({
         ...exp,
-        status: toUiStatus(exp.status)
+        status: toUiStatus(exp.status),
       }));
       setExpenses(mappedExpenses);
     } catch (error) {
@@ -47,8 +47,8 @@ export const FinanceiroPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchCategories();
-    fetchExpenses();
+    void fetchCategories();
+    void fetchExpenses();
   }, []);
 
   const handleAddExpense = async (newExpense: Omit<Expense, 'id'>) => {
@@ -58,12 +58,13 @@ export const FinanceiroPage: React.FC = () => {
         category: newExpense.category,
         amount: Number(newExpense.amount),
         dueDate: newExpense.dueDate || null,
-        status: toApiStatus(newExpense.status as 'Pendente' | 'Pago'),
+        status: toApiStatus(newExpense.status),
+        vendorId: newExpense.vendorId || null,
       });
-      
+
       const createdExpense = {
         ...response.data,
-        status: toUiStatus(response.data.status)
+        status: toUiStatus(response.data.status),
       };
 
       setExpenses([createdExpense, ...expenses]);
@@ -76,9 +77,9 @@ export const FinanceiroPage: React.FC = () => {
   const handleUpdateExpense = (updatedExpense: Expense) => {
     const mappedUpdated = {
       ...updatedExpense,
-      status: toUiStatus(updatedExpense.status)
+      status: toUiStatus(updatedExpense.status),
     };
-    setExpenses(expenses.map(exp => exp.id === mappedUpdated.id ? mappedUpdated : exp));
+    setExpenses(expenses.map((exp) => (exp.id === mappedUpdated.id ? mappedUpdated : exp)));
   };
 
   const handleToggleStatus = async (id: string, currentStatus: 'Pendente' | 'Pago') => {
@@ -87,7 +88,7 @@ export const FinanceiroPage: React.FC = () => {
 
     try {
       await api.patch(`/api/expenses/${id}`, { status: nextApiStatus });
-      setExpenses(expenses.map(exp => exp.id === id ? { ...exp, status: nextUiStatus } : exp));
+      setExpenses(expenses.map((exp) => (exp.id === id ? { ...exp, status: nextUiStatus } : exp)));
     } catch (error) {
       console.error('Erro ao atualizar status da despesa:', error);
     }
@@ -97,27 +98,117 @@ export const FinanceiroPage: React.FC = () => {
     if (!window.confirm('Tem certeza que deseja excluir esta despesa?')) return;
     try {
       await api.delete(`/api/expenses/${id}`);
-      setExpenses(expenses.filter(exp => exp.id !== id));
+      setExpenses(expenses.filter((exp) => exp.id !== id));
     } catch (error) {
       console.error('Erro ao deletar despesa:', error);
     }
   };
 
   const filteredExpenses = expenses.filter((expense) => {
-    const matchesSearch = expense.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          expense.category.toLowerCase().includes(searchTerm.toLowerCase());
+    const normalizedSearch = searchTerm.toLowerCase();
+    const matchesSearch =
+      expense.title.toLowerCase().includes(normalizedSearch) ||
+      expense.category.toLowerCase().includes(normalizedSearch) ||
+      (expense.vendor?.name || '').toLowerCase().includes(normalizedSearch);
     const matchesCategory = selectedCategory === 'Todas' || expense.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
+  const renderExpensesTableBody = () => {
+    if (loading) {
+      return (
+        <tr>
+          <td colSpan={6} className="py-8 text-center text-muted-foreground">
+            Carregando despesas...
+          </td>
+        </tr>
+      );
+    }
+
+    if (filteredExpenses.length === 0) {
+      return (
+        <tr>
+          <td colSpan={6} className="py-8 text-center text-muted-foreground">
+            Nenhuma despesa encontrada.
+          </td>
+        </tr>
+      );
+    }
+
+    return filteredExpenses.map((expense) => (
+      <tr key={expense.id} className="hover:bg-muted/30 transition-colors">
+        <td className="py-4 px-6">
+          <div className="font-semibold text-foreground">{expense.title}</div>
+          {expense.vendor?.name && (
+            <div className="inline-flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+              <Store size={12} className="text-primary shrink-0" />
+              <span>{expense.vendor.name}</span>
+            </div>
+          )}
+        </td>
+        <td className="py-4 px-6">
+          <span className="inline-block px-2.5 py-1 rounded-full text-xs font-medium bg-muted text-foreground">
+            {expense.category}
+          </span>
+        </td>
+        <td className="py-4 px-6 font-bold text-foreground">
+          R$ {Number(expense.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+        </td>
+        <td className="py-4 px-6 text-muted-foreground">
+          {expense.dueDate
+            ? new Date(`${expense.dueDate.split('T')[0]}T00:00:00`).toLocaleDateString('pt-BR')
+            : 'Sem data'}
+        </td>
+        <td className="py-4 px-6">
+          <button
+            type="button"
+            onClick={() => handleToggleStatus(expense.id, expense.status)}
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-transform hover:scale-105 ${
+              expense.status === 'Pago' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+            }`}
+            title="Clique para alternar o status"
+          >
+            {expense.status === 'Pago' ? <CheckCircle2 size={14} /> : <Clock size={14} />}{' '}
+            {expense.status}
+          </button>
+        </td>
+        <td className="py-4 px-6 text-right">
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setEditingExpense(expense)}
+              className="text-muted-foreground hover:text-primary transition-colors p-1 cursor-pointer"
+              title="Editar despesa"
+            >
+              <Pencil size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => handleDeleteExpense(expense.id)}
+              className="text-muted-foreground hover:text-red-500 transition-colors p-1 cursor-pointer"
+              title="Excluir despesa"
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+        </td>
+      </tr>
+    ));
+  };
 
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h3 className="text-2xl font-bold tracking-tight text-foreground font-display">Controle Financeiro</h3>
-          <p className="text-sm text-muted-foreground mt-1">Gerencie despesas, custos e acompanhe o que falta pagar do casamento.</p>
+          <h3 className="text-2xl font-bold tracking-tight text-foreground font-display">
+            Controle Financeiro
+          </h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Gerencie despesas, custos e acompanhe o que falta pagar do casamento.
+          </p>
         </div>
-        <button 
+        <button
+          type="button"
           onClick={() => setIsExpenseOpen(true)}
           className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-5 py-3 rounded-2xl shadow-lg shadow-primary/20 flex items-center gap-2 transition-all cursor-pointer"
         >
@@ -128,11 +219,11 @@ export const FinanceiroPage: React.FC = () => {
       <div className="bg-card p-4 rounded-3xl border border-border shadow-sm flex flex-col md:flex-row items-center gap-4">
         <div className="relative w-full">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-          <input 
-            type="text" 
+          <input
+            type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar despesa ou categoria..." 
+            placeholder="Buscar despesa, fornecedor ou categoria..."
             className="w-full pl-11 pr-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring transition-colors text-foreground"
           />
         </div>
@@ -144,7 +235,9 @@ export const FinanceiroPage: React.FC = () => {
             onChange={(e) => setSelectedCategory(e.target.value)}
             className="w-full pl-11 pr-4 py-2.5 bg-muted/50 border border-border rounded-2xl text-sm focus:outline-none focus:border-ring transition-colors text-foreground appearance-none cursor-pointer"
           >
-            <option value="Todas" className="bg-card text-foreground">Todas as Categorias</option>
+            <option value="Todas" className="bg-card text-foreground">
+              Todas as Categorias
+            </option>
             {categories.map((cat) => (
               <option key={cat} value={cat} className="bg-card text-foreground">
                 {cat}
@@ -154,7 +247,8 @@ export const FinanceiroPage: React.FC = () => {
         </div>
 
         {selectedCategory !== 'Todas' && (
-          <button 
+          <button
+            type="button"
             onClick={() => setSelectedCategory('Todas')}
             className="text-xs text-muted-foreground hover:text-foreground p-2 cursor-pointer flex items-center gap-1"
             title="Limpar filtro"
@@ -177,76 +271,18 @@ export const FinanceiroPage: React.FC = () => {
                 <th className="py-4 px-6 text-right">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border text-sm">
-              {loading ? (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center text-muted-foreground">
-                    Carregando despesas...
-                  </td>
-                </tr>
-              ) : filteredExpenses.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center text-muted-foreground">
-                    Nenhuma despesa encontrada.
-                  </td>
-                </tr>
-              ) : (
-                filteredExpenses.map((expense) => (
-                  <tr key={expense.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="py-4 px-6 font-semibold text-foreground">{expense.title}</td>
-                    <td className="py-4 px-6">
-                      <span className="inline-block px-2.5 py-1 rounded-full text-xs font-medium bg-muted text-foreground">
-                        {expense.category}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6 font-bold text-foreground">R$ {Number(expense.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                    <td className="py-4 px-6 text-muted-foreground">
-                      {expense.dueDate ? new Date(expense.dueDate.split('T')[0] + 'T00:00:00').toLocaleDateString('pt-BR') : 'Sem data'}
-                    </td>
-                    <td className="py-4 px-6">
-                      <button 
-                        onClick={() => handleToggleStatus(expense.id, expense.status)}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-transform hover:scale-105 ${
-                          expense.status === 'Pago' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
-                        }`}
-                        title="Clique para alternar o status"
-                      >
-                        {expense.status === 'Pago' ? <CheckCircle2 size={14} /> : <Clock size={14} />} {expense.status}
-                      </button>
-                    </td>
-                    <td className="py-4 px-6 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button 
-                          onClick={() => setEditingExpense(expense)}
-                          className="text-muted-foreground hover:text-primary transition-colors p-1 cursor-pointer"
-                          title="Editar despesa"
-                        >
-                          <Pencil size={16} />
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteExpense(expense.id)}
-                          className="text-muted-foreground hover:text-red-500 transition-colors p-1 cursor-pointer"
-                          title="Excluir despesa"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
+            <tbody className="divide-y divide-border text-sm">{renderExpensesTableBody()}</tbody>
           </table>
         </div>
       </div>
 
-      <NewExpenseDialog 
+      <NewExpenseDialog
         isOpen={isExpenseOpen}
         onClose={() => setIsExpenseOpen(false)}
         onSave={handleAddExpense}
       />
 
-      <EditExpenseDialog 
+      <EditExpenseDialog
         isOpen={!!editingExpense}
         onClose={() => setEditingExpense(null)}
         expense={editingExpense}

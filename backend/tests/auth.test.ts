@@ -8,6 +8,13 @@ import crypto from 'node:crypto';
 import { PrismaClient } from '@prisma/client';
 import { OAuth2Client } from 'google-auth-library';
 import app from '../src/server.js';
+import {
+  AuthError,
+  loginWithCredentials,
+  normalizeEmail,
+  registerUser,
+  resetPassword,
+} from '../src/services/authService.js';
 
 const prisma = new PrismaClient();
 
@@ -516,6 +523,34 @@ describe('Auth API Tests', () => {
         .set('Authorization', `Bearer ${semId}`);
 
       expect(response.status).toBe(401);
+    });
+  });
+
+  describe('authService unit helpers & validation', () => {
+    it('deve normalizar e-mails corretamente e rejeitar não-strings', () => {
+      expect(normalizeEmail('  User@BrideHub.COM  ')).toBe('user@bridehub.com');
+      expect(normalizeEmail(null)).toBe('');
+      expect(normalizeEmail({ email: 'a@b.com' })).toBe('');
+    });
+
+    it('deve rejeitar senha passada como objeto em registerUser sem virar "[object Object]"', async () => {
+      await expect(
+        registerUser({
+          name: 'Teste',
+          email: emailFor('unit-obj-pass'),
+          password: { toString: () => 'senhaValida123' },
+        })
+      ).rejects.toThrow(AuthError);
+    });
+
+    it('deve rejeitar senha não-string em loginWithCredentials e resetPassword', async () => {
+      await expect(
+        loginWithCredentials({ email: emailFor('unit-login'), password: {} })
+      ).rejects.toThrow('Credenciais inválidas.');
+
+      await expect(
+        resetPassword({ token: 'abc', password: {} })
+      ).rejects.toThrow('Token e nova senha são obrigatórios.');
     });
   });
 });

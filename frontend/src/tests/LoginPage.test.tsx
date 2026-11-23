@@ -41,7 +41,7 @@ describe('LoginPage Component', () => {
   it('deve renderizar o formulário de login por padrão', () => {
     render(<LoginPage onLogin={mockOnLogin} />)
 
-    expect(screen.getByText('Bem-vinda de volta')).toBeInTheDocument()
+    expect(screen.getByText('Bem-vinda ao BrideHub!')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^entrar$/i })).toBeInTheDocument()
     expect(screen.queryByPlaceholderText('Ex: Laíza & Marcos')).not.toBeInTheDocument()
   })
@@ -65,7 +65,7 @@ describe('LoginPage Component', () => {
     await user.click(screen.getByRole('button', { name: /criar conta gratuita/i }))
     await user.click(screen.getByRole('button', { name: /fazer login/i }))
 
-    expect(screen.getByText('Bem-vinda de volta')).toBeInTheDocument()
+    expect(screen.getByText('Bem-vinda ao BrideHub!')).toBeInTheDocument()
     expect(screen.queryByPlaceholderText('Ex: Laíza & Marcos')).not.toBeInTheDocument()
   })
 
@@ -297,7 +297,7 @@ describe('LoginPage Component', () => {
 
       await user.click(screen.getByRole('button', { name: /voltar para o login/i }))
 
-      expect(screen.getByText('Bem-vinda de volta')).toBeInTheDocument()
+      expect(screen.getByText('Bem-vinda ao BrideHub!')).toBeInTheDocument()
       expect(screen.queryByText('Link enviado.')).not.toBeInTheDocument()
       expect(screen.getByTestId('google-login-mock')).toBeInTheDocument()
     })

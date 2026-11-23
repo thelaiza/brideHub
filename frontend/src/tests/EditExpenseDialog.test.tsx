@@ -20,25 +20,39 @@ describe('EditExpenseDialog Component', () => {
     amount: 15000,
     dueDate: '2026-10-04T00:00:00.000Z',
     status: 'pending' as unknown as Expense['status'],
+    vendorId: null,
+    vendor: null,
   }
 
   const mockCategories = ['Buffet', 'Local']
+  const mockVendors = [
+    { id: 'v-1', name: 'Buffet Sabor & Arte', category: 'Buffet', phone: '', status: 'Contratado' as const, cost: 15000 },
+    { id: 'v-2', name: 'Espaço Jardim', category: 'Local', phone: '', status: 'Contratado' as const, cost: 10000 },
+  ]
 
   const mockOnClose = vi.fn()
   const mockOnSave = vi.fn()
 
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(api.get).mockResolvedValue({ data: mockCategories })
+    vi.mocked(api.get).mockImplementation((url: string) => {
+      if (url === '/api/categories') {
+        return Promise.resolve({ data: mockCategories })
+      }
+      if (url === '/api/vendors') {
+        return Promise.resolve({ data: mockVendors })
+      }
+      return Promise.resolve({ data: [] })
+    })
   })
 
   it('não deve renderizar nada quando isOpen for falso', () => {
     render(
-      <EditExpenseDialog 
-        isOpen={false} 
-        onClose={mockOnClose} 
-        expense={mockExpense} 
-        onSave={mockOnSave} 
+      <EditExpenseDialog
+        isOpen={false}
+        onClose={mockOnClose}
+        expense={mockExpense}
+        onSave={mockOnSave}
       />
     )
 
@@ -48,11 +62,15 @@ describe('EditExpenseDialog Component', () => {
 
   it('deve preencher os campos com os dados da despesa quando isOpen for verdadeiro', async () => {
     render(
-      <EditExpenseDialog 
-        isOpen={true} 
-        onClose={mockOnClose} 
-        expense={mockExpense} 
-        onSave={mockOnSave} 
+      <EditExpenseDialog
+        isOpen={true}
+        onClose={mockOnClose}
+        expense={{
+          ...mockExpense,
+          vendorId: 'v-1',
+          vendor: { id: 'v-1', name: 'Buffet Sabor & Arte', category: 'Buffet' },
+        }}
+        onSave={mockOnSave}
       />
     )
 
@@ -62,18 +80,21 @@ describe('EditExpenseDialog Component', () => {
     expect(screen.getByDisplayValue('2026-10-04')).toBeInTheDocument()
 
     await screen.findByRole('option', { name: 'Local' })
+    await screen.findByRole('option', { name: 'Buffet Sabor & Arte' })
+
     expect(screen.getByLabelText('Categoria')).toHaveValue('Buffet')
+    expect(screen.getByLabelText(/fornecedor/i)).toHaveValue('v-1')
   })
 
   it('deve chamar onClose ao clicar no botão de cancelar', async () => {
     const user = userEvent.setup()
 
     render(
-      <EditExpenseDialog 
-        isOpen={true} 
-        onClose={mockOnClose} 
-        expense={mockExpense} 
-        onSave={mockOnSave} 
+      <EditExpenseDialog
+        isOpen={true}
+        onClose={mockOnClose}
+        expense={mockExpense}
+        onSave={mockOnSave}
       />
     )
 
@@ -86,23 +107,30 @@ describe('EditExpenseDialog Component', () => {
 
   it('deve enviar os dados atualizados via patch e chamar onSave ao submeter o formulário', async () => {
     const user = userEvent.setup()
-    const updatedResponse = { ...mockExpense, title: 'Buffet Premium' }
+    const updatedResponse = {
+      ...mockExpense,
+      title: 'Buffet Premium',
+      vendorId: 'v-1',
+      vendor: { id: 'v-1', name: 'Buffet Sabor & Arte', category: 'Buffet' },
+    }
     vi.mocked(api.patch).mockResolvedValueOnce({ data: updatedResponse })
 
     render(
-      <EditExpenseDialog 
-        isOpen={true} 
-        onClose={mockOnClose} 
-        expense={mockExpense} 
-        onSave={mockOnSave} 
+      <EditExpenseDialog
+        isOpen={true}
+        onClose={mockOnClose}
+        expense={mockExpense}
+        onSave={mockOnSave}
       />
     )
 
     await screen.findByRole('option', { name: 'Local' })
+    await screen.findByRole('option', { name: 'Buffet Sabor & Arte' })
 
     const titleInput = screen.getByDisplayValue('Buffet Casamento')
     await user.clear(titleInput)
     await user.type(titleInput, 'Buffet Premium')
+    await user.selectOptions(screen.getByLabelText(/fornecedor/i), 'v-1')
 
     await user.click(screen.getByRole('button', { name: /salvar alterações/i }))
 
@@ -114,6 +142,7 @@ describe('EditExpenseDialog Component', () => {
         amount: 15000,
         dueDate: '2026-10-04',
         status: 'pending',
+        vendorId: 'v-1',
       })
       expect(mockOnSave).toHaveBeenCalledWith(updatedResponse)
       expect(mockOnClose).toHaveBeenCalledTimes(1)

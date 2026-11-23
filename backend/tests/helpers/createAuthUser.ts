@@ -1,9 +1,10 @@
+import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import app from '../../src/server.js';
 
 export async function createAuthUser() {
-  const uniqueEmail = `testuser_${Date.now()}_${Math.random().toString(36).substring(7)}@bridehub.com`;
-  
+  const uniqueEmail = `testuser_${Date.now()}_${randomUUID().slice(0, 8)}@bridehub.com`;
+
   const registerResponse = await request(app)
     .post('/api/auth/register')
     .send({

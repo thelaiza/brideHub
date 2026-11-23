@@ -3,6 +3,44 @@ import type { AuthenticatedRequest } from '../middlewares/authMiddleware.js';
 
 const prisma = new PrismaClient();
 
+const vendorInclude = {
+  vendor: {
+    select: {
+      id: true,
+      name: true,
+      category: true,
+    },
+  },
+};
+
+const validateUserVendor = async (
+  vendorId: unknown,
+  userId: string
+): Promise<string | null | { error: string }> => {
+  if (vendorId === undefined || vendorId === null || vendorId === '') {
+    return null;
+  }
+
+  if (typeof vendorId !== 'string') {
+    return { error: 'Fornecedor inválido.' };
+  }
+
+  const normalizedVendorId = vendorId.trim();
+  if (!normalizedVendorId) {
+    return null;
+  }
+
+  const vendor = await prisma.vendor.findFirst({
+    where: { id: normalizedVendorId, userId },
+  });
+
+  if (!vendor) {
+    return { error: 'Fornecedor não encontrado.' };
+  }
+
+  return vendor.id;
+};
+
 export const getExpenses = async (req: AuthenticatedRequest, res: any) => {
   try {
     const userId = req.userId;
@@ -12,6 +50,7 @@ export const getExpenses = async (req: AuthenticatedRequest, res: any) => {
 
     const expenses = await prisma.expense.findMany({
       where: { userId },
+      include: vendorInclude,
       orderBy: { createdAt: 'desc' },
     });
 
@@ -29,10 +68,15 @@ export const createExpense = async (req: AuthenticatedRequest, res: any) => {
       return res.status(401).json({ error: 'Usuário não autenticado.' });
     }
 
-    const { title, category, amount, dueDate, status } = req.body;
+    const { title, category, amount, dueDate, status, vendorId } = req.body;
 
     if (!title || !category || amount === undefined) {
       return res.status(400).json({ error: 'Título, categoria e valor são obrigatórios.' });
+    }
+
+    const resolvedVendor = await validateUserVendor(vendorId, userId);
+    if (resolvedVendor && typeof resolvedVendor === 'object') {
+      return res.status(400).json({ error: resolvedVendor.error });
     }
 
     const expense = await prisma.expense.create({
@@ -42,8 +86,10 @@ export const createExpense = async (req: AuthenticatedRequest, res: any) => {
         amount: Number(amount),
         dueDate: dueDate ? new Date(dueDate) : null,
         status: status || 'pending',
+        vendorId: resolvedVendor,
         userId: userId as string,
       },
+      include: vendorInclude,
     });
 
     return res.status(201).json(expense);
@@ -57,7 +103,7 @@ export const updateExpense = async (req: AuthenticatedRequest, res: any) => {
   try {
     const userId = req.userId;
     const id = String(req.params.id);
-    const { title, category, amount, dueDate, status } = req.body;
+    const { title, category, amount, dueDate, status, vendorId } = req.body;
 
     if (!userId) {
       return res.status(401).json({ error: 'Usuário não autenticado.' });
@@ -79,10 +125,18 @@ export const updateExpense = async (req: AuthenticatedRequest, res: any) => {
     if (dueDate !== undefined) {
       updateData.dueDate = dueDate ? new Date(dueDate) : null;
     }
+    if (vendorId !== undefined) {
+      const resolvedVendor = await validateUserVendor(vendorId, userId);
+      if (resolvedVendor && typeof resolvedVendor === 'object') {
+        return res.status(400).json({ error: resolvedVendor.error });
+      }
+      updateData.vendorId = resolvedVendor;
+    }
 
     const updatedExpense = await prisma.expense.update({
       where: { id },
       data: updateData,
+      include: vendorInclude,
     });
 
     return res.json(updatedExpense);

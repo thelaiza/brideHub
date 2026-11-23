@@ -85,20 +85,18 @@ function handleSeparatorChar(state: CsvParserState): void {
 }
 
 function handleNewLineChar(state: CsvParserState, text: string, i: number): number {
-  if (text[i] === '\r' && text[i + 1] === '\n') {
-    i++;
-  }
   state.row.push(state.cell);
   state.rows.push(state.row);
   state.row = [];
   state.cell = '';
-  return i;
+  return text[i] === '\r' && text[i + 1] === '\n' ? i + 1 : i;
 }
 
 function parseCsvRows(text: string, sep: string): string[][] {
   const state: CsvParserState = { rows: [], row: [], cell: '', inQuotes: false };
+  let i = 0;
 
-  for (let i = 0; i < text.length; i++) {
+  while (i < text.length) {
     const ch = text[i];
     if (state.inQuotes) {
       if (ch === '"') {
@@ -115,7 +113,9 @@ function parseCsvRows(text: string, sep: string): string[][] {
     } else {
       state.cell += ch;
     }
+    i++;
   }
+
   state.row.push(state.cell);
   state.rows.push(state.row);
   return state.rows;
@@ -295,7 +295,7 @@ export const ImportGuestsDialog: React.FC<Props> = ({ isOpen, onClose, onImportS
         return;
       }
 
-        const response = await api.post('/api/guests/import', { guests });
+      const response = await api.post('/api/guests/import', { guests });
       onImportSuccess(
         response.data?.message ||
           `${guests.length} convidado(s) importado(s) com sucesso de "${file.name}".`
@@ -317,9 +317,10 @@ export const ImportGuestsDialog: React.FC<Props> = ({ isOpen, onClose, onImportS
           <button
             type="button"
             onClick={onClose}
+            aria-label="Fechar modal"
             className="p-1.5 rounded-xl text-muted-foreground hover:bg-muted transition cursor-pointer"
           >
-            <X size= {18} />
+            <X size={18} />
           </button>
         </div>
 
