@@ -1,14 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Armchair, Users, UserPlus, Trash2, X } from 'lucide-react';
+import { Plus, Armchair, Users, UserPlus, Trash2, X, RefreshCw } from 'lucide-react';
 import { NewTableDialog } from '../components/dialogs/NewTableDialog';
 import { AddGuestToTableDialog } from '../components/dialogs/AddGuestToTableDialog';
 import type { Guest, WeddingTable } from '../types';
 import { api } from '../services/api';
 
+const getNextDefaultTableName = (existingTables: WeddingTable[]): string => {
+  const existingNames = new Set(existingTables.map((t) => t.name.trim().toLowerCase()));
+  let candidate = 1;
+  while (existingNames.has(`mesa ${candidate}`)) {
+    candidate += 1;
+  }
+  return `Mesa ${candidate}`;
+};
+
 export const MesasPage: React.FC = () => {
   const [tables, setTables] = useState<WeddingTable[]>([]);
   const [guests, setGuests] = useState<Guest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isNewTableOpen, setIsNewTableOpen] = useState(false);
   const [selectedTableForGuest, setSelectedTableForGuest] = useState<WeddingTable | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
@@ -19,6 +29,8 @@ export const MesasPage: React.FC = () => {
   };
 
   const fetchData = async () => {
+    setLoading(true);
+    setLoadError(null);
     try {
       const [tablesRes, guestsRes] = await Promise.all([
         api.get('/api/tables'),
@@ -28,6 +40,7 @@ export const MesasPage: React.FC = () => {
       setGuests(guestsRes.data || []);
     } catch (error) {
       console.error('Erro ao carregar mapa de mesas:', error);
+      setLoadError('Não foi possível carregar o mapa de mesas.');
     } finally {
       setLoading(false);
     }
@@ -37,8 +50,9 @@ export const MesasPage: React.FC = () => {
     void fetchData();
   }, []);
 
-  const unseatedGuests = guests.filter((g) => !g.tableId && !g.table);
+  const unseatedGuests = guests.filter((g) => !g.tableId);
   const seatedCount = guests.length - unseatedGuests.length;
+  const nextDefaultName = getNextDefaultTableName(tables);
 
   const handleCreateTable = async (name: string) => {
     const response = await api.post('/api/tables', { name });
@@ -54,7 +68,7 @@ export const MesasPage: React.FC = () => {
       await api.delete(`/api/tables/${table.id}`);
       setTables((prev) => prev.filter((t) => t.id !== table.id));
       setGuests((prev) =>
-        prev.map((g) => (g.tableId === table.id ? { ...g, tableId: null, table: null } : g))
+        prev.map((g) => (g.tableId === table.id ? { ...g, tableId: null } : g))
       );
     } catch (error: any) {
       console.error('Erro ao excluir mesa:', error);
@@ -98,6 +112,24 @@ export const MesasPage: React.FC = () => {
   const renderTablesContent = () => {
     if (loading) {
       return <div className="py-12 text-center text-muted-foreground">Carregando mesas...</div>;
+    }
+
+    if (loadError) {
+      return (
+        <div
+          role="alert"
+          className="bg-card rounded-3xl border border-red-200 shadow-sm p-10 flex flex-col items-center justify-center text-center"
+        >
+          <p className="text-sm font-semibold text-red-700">{loadError}</p>
+          <button
+            type="button"
+            onClick={() => void fetchData()}
+            className="mt-4 px-4 py-2 rounded-2xl border border-border bg-muted/50 hover:bg-muted text-xs font-semibold text-foreground inline-flex items-center gap-2 transition-colors cursor-pointer"
+          >
+            <RefreshCw size={14} /> Tentar novamente
+          </button>
+        </div>
+      );
     }
 
     if (tables.length === 0) {
@@ -267,7 +299,7 @@ export const MesasPage: React.FC = () => {
 
       {renderTablesContent()}
 
-      {!loading && guests.length > 0 && (
+      {!loading && !loadError && guests.length > 0 && (
         <section className="bg-card p-6 rounded-3xl border border-border shadow-sm space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h4 className="text-base font-bold text-foreground font-display">
@@ -302,7 +334,7 @@ export const MesasPage: React.FC = () => {
         isOpen={isNewTableOpen}
         onClose={() => setIsNewTableOpen(false)}
         onSave={handleCreateTable}
-        defaultName={`Mesa ${tables.length + 1}`}
+        defaultName={nextDefaultName}
       />
 
       <AddGuestToTableDialog

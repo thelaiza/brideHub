@@ -1,6 +1,5 @@
 /// <reference types="jest" />
 
-import { jest } from '@jest/globals';
 import request from 'supertest';
 import { PrismaClient } from '@prisma/client';
 import app from '../src/server.js';
@@ -107,11 +106,11 @@ describe('Table Management API Tests', () => {
     secondTableId = secondRes.body.id;
   });
 
-  it('deve retornar erro 400 ao tentar criar mesa com nome duplicado para o mesmo usuário', async () => {
+  it('deve retornar erro 400 ao tentar criar mesa com nome duplicado (inclusive case-insensitive)', async () => {
     const response = await request(app)
       .post('/api/tables')
       .set('Authorization', `Bearer ${authToken}`)
-      .send({ name: 'Mesa 1' });
+      .send({ name: 'mesa 1' });
 
     expect(response.status).toBe(400);
     expect(response.body).toHaveProperty('error');
@@ -150,7 +149,7 @@ describe('Table Management API Tests', () => {
     expect(unknownGuestRes.status).toBe(404);
   });
 
-  it('deve alocar convidado na mesa e preencher table e tableId no banco', async () => {
+  it('deve alocar convidado na mesa e preencher tableId no banco', async () => {
     const response = await request(app)
       .post(`/api/tables/${tableId}/guests`)
       .set('Authorization', `Bearer ${authToken}`)
@@ -186,7 +185,7 @@ describe('Table Management API Tests', () => {
     expect(wrongGuestRes.status).toBe(404);
   });
 
-  it('deve remover convidado da mesa e limpar table e tableId no banco', async () => {
+  it('deve remover convidado da mesa e limpar tableId no banco', async () => {
     const response = await request(app)
       .delete(`/api/tables/${tableId}/guests/${guestId}`)
       .set('Authorization', `Bearer ${authToken}`);
@@ -219,6 +218,5 @@ describe('Table Management API Tests', () => {
 
     const guestAfterDelete = await prisma.guest.findUnique({ where: { id: guestId } });
     expect(guestAfterDelete?.tableId).toBeNull();
-    expect(guestAfterDelete?.table).toBeNull();
   });
 });
