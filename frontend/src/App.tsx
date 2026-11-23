@@ -9,6 +9,7 @@ import { MesasPage } from './pages/MesasPage';
 import { LoginPage } from './pages/LoginPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { TOKEN_KEY } from './services/api';
+import logoBrideHub from './assets/logo.png';
 
 function extractResetToken(): string | null {
   const params = new URLSearchParams(window.location.search);
@@ -30,6 +31,17 @@ export function App() {
   const [currentTab, setCurrentTab] = useState<string>(() => {
     return localStorage.getItem('currentTab') || 'dashboard';
   });
+
+  useEffect(() => {
+    let favicon = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
+    if (!favicon) {
+      favicon = document.createElement('link');
+      favicon.rel = 'icon';
+      document.head.appendChild(favicon);
+    }
+    favicon.type = 'image/png';
+    favicon.href = logoBrideHub;
+  }, []);
 
   useEffect(() => {
     const titles: Record<string, string> = {

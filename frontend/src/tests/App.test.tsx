@@ -7,6 +7,10 @@ vi.mock('../services/api', () => ({
   TOKEN_KEY: 'bridehub_token',
 }))
 
+vi.mock('../assets/logo.png', () => ({
+  default: 'logo-mock.png',
+}))
+
 vi.mock('../components/common/AppShell', () => ({
   AppShell: ({
     children,
@@ -92,6 +96,32 @@ describe('App', () => {
     localStorage.clear()
     window.history.pushState({}, '', '/')
     document.title = ''
+  })
+
+  describe('favicon', () => {
+    it('deve criar e configurar a logo como favicon quando não houver link na página', () => {
+      document.querySelectorAll("link[rel~='icon']").forEach((el) => el.remove())
+
+      render(<App />)
+
+      const favicon = document.querySelector<HTMLLinkElement>("link[rel~='icon']")
+      expect(favicon).not.toBeNull()
+      expect(favicon?.type).toBe('image/png')
+      expect(favicon?.href).toContain('logo-mock.png')
+    })
+
+    it('deve atualizar o favicon existente na página', () => {
+      const existing = document.querySelector<HTMLLinkElement>("link[rel~='icon']")
+      expect(existing).not.toBeNull()
+      if (existing) {
+        existing.href = 'antigo.png'
+      }
+
+      render(<App />)
+
+      const favicon = document.querySelector<HTMLLinkElement>("link[rel~='icon']")
+      expect(favicon?.href).toContain('logo-mock.png')
+    })
   })
 
   describe('autenticação', () => {
