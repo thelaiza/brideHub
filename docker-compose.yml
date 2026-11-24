@@ -4,15 +4,13 @@ services:
     container_name: bridehub_db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-bridehub_admin}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bridehub_pass}
-      POSTGRES_DB: ${POSTGRES_DB:-bridehub_db}
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${POSTGRES_USER:?}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      POSTGRES_DB: ${POSTGRES_DB:?}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-bridehub_admin}']
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:?}']
       interval: 5s
       timeout: 5s
       retries: 10
@@ -24,32 +22,35 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-bridehub_admin}:${POSTGRES_PASSWORD:-bridehub_pass}@db:5432/${POSTGRES_DB:-bridehub_db}?schema=public
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@db:5432/${POSTGRES_DB:?}?schema=public}
       API_PORT: 3333
-      JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET no .env}
+      JWT_SECRET: ${JWT_SECRET:?}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
-      RESEND_FROM: ${RESEND_FROM:-BrideHub <onboarding@resend.dev>}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      RESEND_FROM: ${RESEND_FROM:-}
+      FRONTEND_URL: ${FRONTEND_URL:?}
+      VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:?}
+      CORS_ORIGINS: ${CORS_ORIGINS:?}
+      NODE_ENV: production
     volumes:
       - api-uploads:/app/uploads
-    ports:
-      - '3333:3333'
 
   web:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:?}
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:?}
     restart: unless-stopped
     depends_on:
       - api
     ports:
-      - '${WEB_PORT:-8080}:80'
+      - '${WEB_PORT:-80}:80'
 
   prometheus:
     image: prom/prometheus:v2.53.0
     restart: unless-stopped
     volumes:
       - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-    ports:
-      - '9090:9090'
     depends_on:
       - api
     profiles: ['observability']
@@ -57,10 +58,8 @@ services:
   grafana:
     image: grafana/grafana:11.1.0
     restart: unless-stopped
-    ports:
-      - '3000:3000'
     environment:
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:?}
     volumes:
       - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
       - grafana-data:/var/lib/grafana
@@ -68,25 +67,7 @@ services:
       - prometheus
     profiles: ['observability']
 
-  sonarqube:
-    image: sonarqube:community
-    container_name: bridehub_sonarqube
-    restart: unless-stopped
-    ports:
-      - "9000:9000"
-    environment:
-      - SONAR_JDBC_USERNAME=postgres
-      - SONAR_JDBC_PASSWORD=postgres
-    volumes:
-      - sonarqube_data:/opt/sonarqube/data
-      - sonarqube_extensions:/opt/sonarqube/extensions
-      - sonarqube_logs:/opt/sonarqube/logs
-    profiles: ['observability']
-
 volumes:
   pgdata:
   grafana-data:
   api-uploads:
-  sonarqube_data:
-  sonarqube_extensions:
-  sonarqube_logs:
