@@ -24,4 +24,4 @@ RUN npx prisma generate
 EXPOSE 3333
 
 # Comando para iniciar o servidor
-CMD ["npm", "run", "dev"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npx tsx src/server.ts"]

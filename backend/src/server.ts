@@ -22,16 +22,21 @@ if (!process.env.JWT_SECRET) {
   }
 }
 
-export const getAllowedOrigins = (value: string | undefined = process.env.CORS_ORIGINS) =>
-  value ? value.split(',').map((origin) => origin.trim()) : '*';
+export const getAllowedOrigins = (value: string | undefined = process.env.CORS_ORIGINS) => {
+  if (value) {
+    return value.split(',').map((origin) => origin.trim());
+  }
+  return process.env.NODE_ENV === 'production' ? [] : '*';
+};
 
 const prisma = new PrismaClient();
 const app = express();
 
+app.set('trust proxy', 1);
 app.disable('x-powered-by');
 
 app.use(cors({ origin: getAllowedOrigins() }));
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 app.use(metricsMiddleware);
 
 app.use('/api', authRoutes);
