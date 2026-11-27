@@ -6,15 +6,23 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import crypto from 'node:crypto';
 import { PrismaClient } from '@prisma/client';
-import { OAuth2Client } from 'google-auth-library';
-import app from '../src/server.js';
-import {
+
+const verifyIdTokenMock = jest.fn<(...args: unknown[]) => Promise<unknown>>();
+
+jest.unstable_mockModule('google-auth-library', () => ({
+  OAuth2Client: jest.fn().mockImplementation(() => ({
+    verifyIdToken: verifyIdTokenMock,
+  })),
+}));
+
+const { default: app } = await import('../src/server.js');
+const {
   AuthError,
   loginWithCredentials,
   normalizeEmail,
   registerUser,
   resetPassword,
-} from '../src/services/authService.js';
+} = await import('../src/services/authService.js');
 
 const prisma = new PrismaClient();
 
@@ -25,6 +33,9 @@ describe('Auth API Tests', () => {
   const emailFor = (label: string) => `${prefix}_${label}@bridehub.com`;
   const createdEmail = emailFor('main');
   const originalResendKey = process.env.RESEND_API_KEY;
+  let logSpy: ReturnType<typeof jest.spyOn>;
+  let warnSpy: ReturnType<typeof jest.spyOn>;
+  let errorSpy: ReturnType<typeof jest.spyOn>;
   let authToken = '';
 
   const createPasswordUser = async (label: string, password = 'securepassword123') =>
@@ -50,15 +61,17 @@ describe('Auth API Tests', () => {
   beforeAll(() => {
     // Sem chave, o emailService só registra um aviso e não faz chamadas externas.
     delete process.env.RESEND_API_KEY;
-    jest.spyOn(console, 'log').mockImplementation(() => undefined);
-    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
-    jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    logSpy = jest.spyOn(console, 'log').mockImplementation(() => undefined);
+    warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    errorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
   });
 
   afterAll(async () => {
     await prisma.user.deleteMany({ where: { email: { startsWith: prefix } } });
     await prisma.$disconnect();
-    jest.restoreAllMocks();
+    logSpy.mockRestore();
+    warnSpy.mockRestore();
+    errorSpy.mockRestore();
     if (originalResendKey !== undefined) {
       process.env.RESEND_API_KEY = originalResendKey;
     }
@@ -228,17 +241,13 @@ describe('Auth API Tests', () => {
   });
 
   describe('google', () => {
-    afterEach(() => {
-      jest.restoreAllMocks();
-      jest.spyOn(console, 'log').mockImplementation(() => undefined);
-      jest.spyOn(console, 'warn').mockImplementation(() => undefined);
-      jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    beforeEach(() => {
+      verifyIdTokenMock.mockReset();
+      verifyIdTokenMock.mockRejectedValue(new Error('Invalid token'));
     });
 
     const mockGooglePayload = (payload: Record<string, unknown>) =>
-      jest
-        .spyOn(OAuth2Client.prototype, 'verifyIdToken')
-        .mockResolvedValue({ getPayload: () => payload } as never);
+      verifyIdTokenMock.mockResolvedValue({ getPayload: () => payload });
 
     it('deve rejeitar quando o token não for enviado', async () => {
       const response = await request(app).post('/api/auth/google').send({});
